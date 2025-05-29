@@ -147,7 +147,8 @@ export default function ReviewStep({
                 {remoteStorageConfig.storageType === "gcs" && (
                   <div className="text-sm text-muted-foreground">
                     Bucket: {remoteStorageConfig.bucketName || "Not specified"},
-                    Project: {remoteStorageConfig.projectId || "Not specified"}
+                    Project:{" "}
+                    {remoteStorageConfig.projectIdCloud || "Not specified"}
                   </div>
                 )}
                 {remoteStorageConfig.storageType === "azure" && (

@@ -10,6 +10,7 @@ import RemoteStorageStep, {
   RemoteStorageConfig,
 } from "@/components/remote-storage-step";
 import ReviewStep from "@/components/review-step";
+import { saveOnboardingData } from "@/lib/db";
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -120,13 +121,24 @@ export default function OnboardingPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleComplete = () => {
-    // Here you would typically save all the configuration and create the project
-    toast("Project created successfully", {
-      description: `Project ${projectInfo.name} has been created`,
-    });
+  const handleComplete = async () => {
+    try {
+      const { projectId } = await saveOnboardingData(
+        projectInfo,
+        remoteStorageConfig
+      );
 
-    // TODO: Navigate to the dashboard or the new project
+      toast("Project created successfully", {
+        description: `Project ${projectInfo.name} has been created with ID ${projectId}`,
+      });
+
+      // TODO: Navigate to the dashboard or the new project
+    } catch (error) {
+      toast("Error creating project", {
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
   };
 
   const handleEditStep = (step: number) => {

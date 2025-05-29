@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  InfoIcon,
   CloudIcon,
   FolderIcon,
   CheckCircleIcon,
@@ -10,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -20,16 +19,14 @@ import {
 } from "@/components/ui/select";
 import HelpTooltip from "@/components/help-tooltip";
 
-export type StorageType = "s3" | "gcs" | "azure" | "local" | "none";
-
 export interface RemoteStorageConfig {
-  storageType: StorageType;
+  storageType: "s3" | "gcs" | "azure" | "local";
   bucketName?: string;
+  containerName?: string;
   accessKey?: string;
   secretKey?: string;
-  containerName?: string;
   connectionString?: string;
-  projectId?: string;
+  projectIdCloud?: string;
   keyFilePath?: string;
   localPath?: string;
 }
@@ -49,9 +46,9 @@ export default function RemoteStorageStep({
   onCancel,
   showSaveCancel = false,
 }: RemoteStorageStepProps) {
-  const [activeTab, setActiveTab] = useState<StorageType>(
-    remoteStorageConfig.storageType || "none"
-  );
+  const [activeTab, setActiveTab] = useState<
+    RemoteStorageConfig["storageType"]
+  >(remoteStorageConfig.storageType || "s3");
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<{
     status: "idle" | "success" | "error";
@@ -61,7 +58,9 @@ export default function RemoteStorageStep({
     message: "",
   });
 
-  const handleStorageTypeChange = (value: StorageType) => {
+  const handleStorageTypeChange = (
+    value: RemoteStorageConfig["storageType"]
+  ) => {
     setActiveTab(value);
     onRemoteStorageConfigChange({ ...remoteStorageConfig, storageType: value });
     // Reset connection status when changing storage type
@@ -71,8 +70,14 @@ export default function RemoteStorageStep({
     });
   };
 
-  const handleConfigChange = (field: string, value: string) => {
-    onRemoteStorageConfigChange({ ...remoteStorageConfig, [field]: value });
+  const handleConfigChange = (
+    key: keyof RemoteStorageConfig,
+    value: string
+  ) => {
+    onRemoteStorageConfigChange({
+      ...remoteStorageConfig,
+      [key]: value,
+    });
     // Reset connection status when changing configuration
     setConnectionStatus({
       status: "idle",
@@ -154,12 +159,11 @@ export default function RemoteStorageStep({
               <SelectItem value="gcs">Google Cloud Storage</SelectItem>
               <SelectItem value="azure">Azure Blob Storage</SelectItem>
               <SelectItem value="local">Local Path</SelectItem>
-              <SelectItem value="none">No Remote Storage</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {activeTab !== "none" && (
+        {activeTab !== "local" && (
           <Tabs value={activeTab} className="w-full">
             <TabsContent value="s3" className="space-y-4 mt-0">
               <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
@@ -305,9 +309,9 @@ export default function RemoteStorageStep({
                   <Input
                     id="gcs-project-id"
                     placeholder="my-gcp-project-id"
-                    value={remoteStorageConfig.projectId || ""}
+                    value={remoteStorageConfig.projectIdCloud || ""}
                     onChange={(e) =>
-                      handleConfigChange("projectId", e.target.value)
+                      handleConfigChange("projectIdCloud", e.target.value)
                     }
                   />
                 </div>
@@ -349,7 +353,7 @@ export default function RemoteStorageStep({
                     disabled={
                       testingConnection ||
                       !remoteStorageConfig.bucketName ||
-                      !remoteStorageConfig.projectId ||
+                      !remoteStorageConfig.projectIdCloud ||
                       !remoteStorageConfig.keyFilePath
                     }
                     className="w-fit"
@@ -465,85 +469,14 @@ export default function RemoteStorageStep({
                 </div>
               </div>
             </TabsContent>
-
-            <TabsContent value="local" className="space-y-4 mt-0">
-              <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-                <FolderIcon className="h-4 w-4 mt-0.5 mr-2 text-blue-500" />
-
-                <AlertDescription className="text-sm">
-                  Use a local path as remote storage for your DICOM data. This
-                  is useful for testing or when you don't need cloud storage.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="local-path">Local Path</Label>
-                  <HelpTooltip
-                    content="A path on your local file system or network drive where DICOM data will be stored. This should be a location with sufficient disk space."
-                    side="right"
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <Input
-                    id="local-path"
-                    placeholder="/path/to/remote/storage"
-                    value={remoteStorageConfig.localPath || ""}
-                    onChange={(e) =>
-                      handleConfigChange("localPath", e.target.value)
-                    }
-                  />
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleBrowseLocalPath}
-                  >
-                    <FolderIcon className="h-4 w-4 mr-2" />
-                    Browse
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleTestConnection}
-                  disabled={testingConnection || !remoteStorageConfig.localPath}
-                  className="w-fit"
-                >
-                  {testingConnection ? "Testing..." : "Test Connection"}
-                </Button>
-
-                {connectionStatus.status !== "idle" && (
-                  <Alert
-                    className={
-                      connectionStatus.status === "success"
-                        ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900"
-                        : "bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-900"
-                    }
-                  >
-                    {connectionStatus.status === "success" ? (
-                      <CheckCircleIcon className="h-4 w-4 mt-0.5 mr-2 text-green-500" />
-                    ) : (
-                      <XCircleIcon className="h-4 w-4 mt-0.5 mr-2 text-red-500" />
-                    )}
-                    <AlertDescription className="text-sm">
-                      {connectionStatus.message}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </TabsContent>
           </Tabs>
         )}
 
-        {activeTab === "none" && (
-          <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-900">
+        {activeTab === "local" && (
+          <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
             <AlertDescription className="text-sm">
-              No remote storage will be configured. You can add remote storage
-              later if needed.
+              Use a local path as remote storage for your DICOM data. This is
+              useful for testing or when you don't need cloud storage.
             </AlertDescription>
           </Alert>
         )}

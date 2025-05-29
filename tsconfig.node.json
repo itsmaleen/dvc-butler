@@ -4,7 +4,8 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["node", "@wdio/globals/types", "@wdio/mocha-framework"]
   },
   "include": ["vite.config.ts"]
 }
