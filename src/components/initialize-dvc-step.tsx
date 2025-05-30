@@ -70,36 +70,32 @@ export default function InitializeDvcStep({
 
       {dvcConfig.initialize && (
         <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-          <div className="flex flex-col space-y-2">
-            <AlertDescription className="text-sm">
-              <strong>What DVC will do:</strong>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>
-                  Create a <code>.dvc</code> directory in your project
-                </li>
-                <li>Track large DICOM files without storing them in Git</li>
-                <li>Enable versioning of your data alongside your code</li>
-                <li>Allow you to easily switch between data versions</li>
-              </ul>
-            </AlertDescription>
-          </div>
+          <AlertDescription className="text-sm">
+            <strong>What DVC will do:</strong>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>
+                Create a <code>.dvc</code> directory in your project
+              </li>
+              <li>Track large DICOM files without storing them in Git</li>
+              <li>Enable versioning of your data alongside your code</li>
+              <li>Allow you to easily switch between data versions</li>
+            </ul>
+          </AlertDescription>
         </Alert>
       )}
 
       {!dvcConfig.initialize && (
         <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-900">
-          <div className="flex flex-col space-y-2">
-            <AlertDescription className="text-sm">
-              <strong>Without DVC:</strong>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>Large DICOM files will need to be managed manually</li>
-                <li>
-                  You'll need to implement your own data versioning strategy
-                </li>
-                <li>You can still initialize DVC later if needed</li>
-              </ul>
-            </AlertDescription>
-          </div>
+          <AlertDescription className="text-sm">
+            <strong>Without DVC:</strong>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>Large DICOM files will need to be managed manually</li>
+              <li>
+                You'll need to implement your own data versioning strategy
+              </li>
+              <li>You can still initialize DVC later if needed</li>
+            </ul>
+          </AlertDescription>
         </Alert>
       )}
     </div>
