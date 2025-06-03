@@ -13,6 +13,10 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as OnboardingImport } from './routes/onboarding'
 import { Route as IndexImport } from './routes/index'
+import { Route as SettingsIndexImport } from './routes/settings/index'
+import { Route as SettingsRemoteStorageImport } from './routes/settings/remote-storage'
+import { Route as SettingsLocalDataImport } from './routes/settings/local-data'
+import { Route as SettingsGitConfigImport } from './routes/settings/git-config'
 
 // Create/Update Routes
 
@@ -25,6 +29,30 @@ const OnboardingRoute = OnboardingImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsIndexRoute = SettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsRemoteStorageRoute = SettingsRemoteStorageImport.update({
+  id: '/settings/remote-storage',
+  path: '/settings/remote-storage',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsLocalDataRoute = SettingsLocalDataImport.update({
+  id: '/settings/local-data',
+  path: '/settings/local-data',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsGitConfigRoute = SettingsGitConfigImport.update({
+  id: '/settings/git-config',
+  path: '/settings/git-config',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -46,6 +74,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingImport
       parentRoute: typeof rootRoute
     }
+    '/settings/git-config': {
+      id: '/settings/git-config'
+      path: '/settings/git-config'
+      fullPath: '/settings/git-config'
+      preLoaderRoute: typeof SettingsGitConfigImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings/local-data': {
+      id: '/settings/local-data'
+      path: '/settings/local-data'
+      fullPath: '/settings/local-data'
+      preLoaderRoute: typeof SettingsLocalDataImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings/remote-storage': {
+      id: '/settings/remote-storage'
+      path: '/settings/remote-storage'
+      fullPath: '/settings/remote-storage'
+      preLoaderRoute: typeof SettingsRemoteStorageImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -54,36 +110,75 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings/git-config': typeof SettingsGitConfigRoute
+  '/settings/local-data': typeof SettingsLocalDataRoute
+  '/settings/remote-storage': typeof SettingsRemoteStorageRoute
+  '/settings': typeof SettingsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings/git-config': typeof SettingsGitConfigRoute
+  '/settings/local-data': typeof SettingsLocalDataRoute
+  '/settings/remote-storage': typeof SettingsRemoteStorageRoute
+  '/settings': typeof SettingsIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings/git-config': typeof SettingsGitConfigRoute
+  '/settings/local-data': typeof SettingsLocalDataRoute
+  '/settings/remote-storage': typeof SettingsRemoteStorageRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/onboarding'
+    | '/settings/git-config'
+    | '/settings/local-data'
+    | '/settings/remote-storage'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/onboarding'
-  id: '__root__' | '/' | '/onboarding'
+  to:
+    | '/'
+    | '/onboarding'
+    | '/settings/git-config'
+    | '/settings/local-data'
+    | '/settings/remote-storage'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/onboarding'
+    | '/settings/git-config'
+    | '/settings/local-data'
+    | '/settings/remote-storage'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OnboardingRoute: typeof OnboardingRoute
+  SettingsGitConfigRoute: typeof SettingsGitConfigRoute
+  SettingsLocalDataRoute: typeof SettingsLocalDataRoute
+  SettingsRemoteStorageRoute: typeof SettingsRemoteStorageRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OnboardingRoute: OnboardingRoute,
+  SettingsGitConfigRoute: SettingsGitConfigRoute,
+  SettingsLocalDataRoute: SettingsLocalDataRoute,
+  SettingsRemoteStorageRoute: SettingsRemoteStorageRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,7 +192,11 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/onboarding"
+        "/onboarding",
+        "/settings/git-config",
+        "/settings/local-data",
+        "/settings/remote-storage",
+        "/settings/"
       ]
     },
     "/": {
@@ -105,6 +204,18 @@ export const routeTree = rootRoute
     },
     "/onboarding": {
       "filePath": "onboarding.tsx"
+    },
+    "/settings/git-config": {
+      "filePath": "settings/git-config.tsx"
+    },
+    "/settings/local-data": {
+      "filePath": "settings/local-data.tsx"
+    },
+    "/settings/remote-storage": {
+      "filePath": "settings/remote-storage.tsx"
+    },
+    "/settings/": {
+      "filePath": "settings/index.tsx"
     }
   }
 }

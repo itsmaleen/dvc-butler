@@ -19,17 +19,25 @@ import {
 import { Link } from "@tanstack/react-router";
 
 export function ProjectSwitcher({
+  activeProjectId,
   projects,
+  setActiveProject,
 }: {
+  activeProjectId: number | undefined;
   projects: {
+    id: number;
     name: string;
     logo: React.ElementType;
   }[];
+  setActiveProject: (projectId: number) => void;
 }) {
   const { isMobile } = useSidebar();
-  const [activeProject, setActiveProject] = React.useState(projects[0]);
 
-  if (!activeProject) {
+  const activeProject = projects?.find(
+    (project) => project.id === activeProjectId
+  );
+
+  if (projects?.length === 0 || !activeProjectId || !activeProject) {
     return null;
   }
 
@@ -65,7 +73,7 @@ export function ProjectSwitcher({
             {projects.map((project, index) => (
               <DropdownMenuItem
                 key={project.name}
-                onClick={() => setActiveProject(project)}
+                onClick={() => setActiveProject(project.id)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">

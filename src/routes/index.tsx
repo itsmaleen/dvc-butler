@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { FileTree } from "@/components/file-tree";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getProjects } from "@/lib/db";
+import { getCurrentProject, getProjects } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { GalleryVerticalEnd } from "lucide-react";
@@ -28,8 +29,20 @@ function Index() {
   const { isPending, error, data, isFetching } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
-      const response = await getProjects();
-      return response.map((project) => ({
+      const projects = await getProjects();
+
+      //   const currentProject = await getCurrentProject();
+
+      //   return {
+      //     projects: projects.map((project) => ({
+      //       id: project.id,
+      //       name: project.name,
+      //       logo: GalleryVerticalEnd,
+      //     })),
+      //     activeProjectId: currentProject?.id,
+      //   };
+      return projects.map((project) => ({
+        id: project.id,
         name: project.name,
         logo: GalleryVerticalEnd,
       }));
@@ -40,11 +53,18 @@ function Index() {
 
   if (error) return "An error has occurred: " + error.message;
 
+  //   if (data?.projects?.length === 0) navigate({ to: "/onboarding" });
   if (data.length === 0) navigate({ to: "/onboarding" });
 
   return (
     <SidebarProvider>
-      <AppSidebar projects={data} />
+      <AppSidebar
+        projects={data}
+        activeProjectId={data[0].id}
+        setActiveProject={(projectId) => {
+          console.log(projectId);
+        }}
+      />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -69,6 +89,7 @@ function Index() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <FileTree initialPath="/Users/marlin/fenn" />
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
             <div className="bg-muted/50 aspect-video rounded-xl" />
             <div className="bg-muted/50 aspect-video rounded-xl" />

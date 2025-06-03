@@ -42,6 +42,12 @@ type DataVersionFile = {
   createdAt: Date;
 };
 
+type CurrentProject = {
+  projectId: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type { Project, StorageConfig, DataFile, DataVersion, DataVersionFile };
 
 export async function createProject(
@@ -144,4 +150,59 @@ export async function getProjects() {
   const projects = await db.select<Project[]>("SELECT * FROM projects");
 
   return projects;
+}
+
+export async function getCurrentProject() {
+  const db = await Database.load("sqlite:fenn.db");
+
+  const projects = await db.select<Project[]>("SELECT * FROM projects");
+
+  if (projects.length === 0) {
+    return null;
+  }
+
+  const currentProject = await db.select<CurrentProject[]>(
+    "SELECT * FROM current_project ORDER BY created_at DESC LIMIT 1"
+  );
+
+  if (currentProject.length === 0) {
+    //   Set first project as current
+    await setCurrentProject(projects[0].id);
+    return projects[0];
+  }
+
+  const project = projects.find(
+    (project) => project.id === currentProject[0].projectId
+  );
+
+  return project;
+}
+
+export async function setCurrentProject(projectId: number) {
+  const db = await Database.load("sqlite:fenn.db");
+
+  const now = new Date().toISOString();
+
+  await db.execute(
+    "INSERT OR REPLACE INTO current_project (project_id, created_at) VALUES (?, ?)",
+    [projectId, now]
+  );
+}
+
+export async function deleteProject(projectId: number) {
+  const db = await Database.load("sqlite:fenn.db");
+
+  await db.execute("DELETE FROM projects WHERE id = ?", [projectId]);
+
+  // If this was the current project, clear the current project
+  const currentProject = await db.select<CurrentProject[]>(
+    "SELECT * FROM current_project WHERE project_id = ?",
+    [projectId]
+  );
+
+  if (currentProject.length > 0) {
+    await db.execute("DELETE FROM current_project WHERE project_id = ?", [
+      projectId,
+    ]);
+  }
 }

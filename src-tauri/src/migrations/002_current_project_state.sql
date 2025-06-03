@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS current_project (
+    project_id INTEGER PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

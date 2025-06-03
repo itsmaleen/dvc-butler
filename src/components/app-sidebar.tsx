@@ -113,12 +113,12 @@ const data = {
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: Settings2,
       items: [
         {
           title: "General",
-          url: "#",
+          url: "/settings",
         },
         {
           title: "Team",
@@ -155,17 +155,24 @@ const data = {
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  activeProjectId: number | undefined;
   projects: {
+    id: number;
     name: string;
     logo: React.ElementType;
   }[];
+  setActiveProject: (projectId: number) => void;
 }
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <ProjectSwitcher projects={props.projects} />
+        <ProjectSwitcher
+          activeProjectId={props.activeProjectId}
+          projects={props.projects}
+          setActiveProject={props.setActiveProject}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
