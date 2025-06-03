@@ -138,12 +138,10 @@ export async function createProject(
   };
 }
 
-export async function testDB() {
+export async function getProjects() {
   const db = await Database.load("sqlite:fenn.db");
 
   const projects = await db.select<Project[]>("SELECT * FROM projects");
-
-  console.log("Projects: ", projects);
 
   return projects;
 }
