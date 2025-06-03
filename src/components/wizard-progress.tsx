@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Fragment } from "react";
 
 interface WizardProgressProps {
   steps: string[];
@@ -13,7 +14,7 @@ export default function WizardProgress({
     <div className="w-full">
       <div className="flex items-center justify-between mb-8">
         {steps.map((step, index) => (
-          <>
+          <Fragment key={index}>
             <div key={index} className="flex flex-col items-center">
               <div
                 className={cn(
@@ -63,7 +64,7 @@ export default function WizardProgress({
                 key={`bar-${index}`}
               />
             )}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>

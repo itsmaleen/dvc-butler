@@ -10,6 +10,7 @@ import RemoteStorageStep, {
   RemoteStorageConfig,
 } from "@/components/remote-storage-step";
 import ReviewStep from "@/components/review-step";
+import { createProject, testDB } from "@/lib/db";
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -46,6 +47,8 @@ export default function OnboardingPage() {
   ];
 
   const handleNext = () => {
+    testDB();
+
     // Validate current step before proceeding
     if (currentStep === 0) {
       if (!projectInfo.name) {
@@ -120,13 +123,24 @@ export default function OnboardingPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleComplete = () => {
-    // Here you would typically save all the configuration and create the project
-    toast("Project created successfully", {
-      description: `Project ${projectInfo.name} has been created`,
-    });
-
-    // TODO: Navigate to the dashboard or the new project
+  const handleComplete = async () => {
+    await createProject(
+      projectInfo,
+      dvcConfig,
+      localDataConfig,
+      remoteStorageConfig
+    )
+      .then(() => {
+        toast("Project created successfully", {
+          description: `Project ${projectInfo.name} has been created`,
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+        toast("Error creating project", {
+          description: error.message,
+        });
+      });
   };
 
   const handleEditStep = (step: number) => {
