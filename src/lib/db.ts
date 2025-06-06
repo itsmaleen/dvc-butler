@@ -43,9 +43,8 @@ type DataVersionFile = {
 };
 
 type CurrentProject = {
-  projectId: number;
+  project_id: number;
   createdAt: Date;
-  updatedAt: Date;
 };
 
 export type { Project, StorageConfig, DataFile, DataVersion, DataVersionFile };
@@ -161,18 +160,30 @@ export async function getCurrentProject() {
     return null;
   }
 
-  const currentProject = await db.select<CurrentProject[]>(
-    "SELECT * FROM current_project ORDER BY created_at DESC LIMIT 1"
-  );
+  const currentProject = await db
+    .select<
+      CurrentProject[]
+    >("SELECT * FROM current_project ORDER BY created_at DESC LIMIT 1")
+    .catch((error) => {
+      console.error(error);
+      return [];
+    });
 
   if (currentProject.length === 0) {
     //   Set first project as current
-    await setCurrentProject(projects[0].id);
+    await setCurrentProject(projects[0].id)
+      .then(() => {
+        console.log("Current project set");
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
     return projects[0];
   }
 
   const project = projects.find(
-    (project) => project.id === currentProject[0].projectId
+    (project) => project.id === currentProject[0].project_id
   );
 
   return project;
@@ -205,4 +216,28 @@ export async function deleteProject(projectId: number) {
       projectId,
     ]);
   }
+}
+
+export async function getLocalPath(projectId: number) {
+  const db = await Database.load("sqlite:fenn.db");
+
+  const localPath = await db
+    .select<{ file_path: string }[]>(
+      "SELECT file_path FROM data_files WHERE project_id = ? ORDER BY created_at DESC LIMIT 1",
+      [projectId]
+    )
+    .then((data) => {
+      console.log("local path");
+      console.log(data);
+      if (data.length > 0) {
+        return data[0].file_path;
+      }
+      return null;
+    })
+    .catch((error) => {
+      console.error(error);
+      return null;
+    });
+
+  return localPath;
 }

@@ -14,33 +14,34 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getCurrentProject, getProjects } from "@/lib/db";
-import { useQuery } from "@tanstack/react-query";
+import {
+  getCurrentProject,
+  getLocalPath,
+  getProjects,
+  setCurrentProject,
+} from "@/lib/db";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { GalleryVerticalEnd } from "lucide-react";
+import { GalleryVerticalEnd, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/(dashboard)/")({
   component: Index,
 });
 
 function Index() {
   const navigate = useNavigate({ from: "/" });
+  const queryClient = useQueryClient();
 
-  const { isPending, error, data, isFetching } = useQuery({
+  const {
+    isPending,
+    error,
+    data: projects,
+    isFetching,
+  } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const projects = await getProjects();
 
-      //   const currentProject = await getCurrentProject();
-
-      //   return {
-      //     projects: projects.map((project) => ({
-      //       id: project.id,
-      //       name: project.name,
-      //       logo: GalleryVerticalEnd,
-      //     })),
-      //     activeProjectId: currentProject?.id,
-      //   };
       return projects.map((project) => ({
         id: project.id,
         name: project.name,
@@ -49,20 +50,49 @@ function Index() {
     },
   });
 
+  const { data: activeProjectId } = useQuery({
+    queryKey: ["activeProjectId"],
+    queryFn: async () => {
+      const currentProject = await getCurrentProject();
+      return currentProject?.id;
+    },
+  });
+
+  const { data: localPath, isPending: isLocalPathPending } = useQuery({
+    queryKey: ["localPath", activeProjectId],
+    queryFn: async () => {
+      console.log("activeProjectId");
+      const localPath = await getLocalPath(activeProjectId ?? 0);
+      console.log("local path");
+      console.log(localPath);
+      return localPath;
+    },
+  });
+
+  const setCurrentProjectMutation = useMutation({
+    mutationFn: (projectId: number) => setCurrentProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activeProjectId"] });
+      queryClient.invalidateQueries({
+        queryKey: ["localPath", activeProjectId],
+      });
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
   if (isPending) return "Loading...";
-
   if (error) return "An error has occurred: " + error.message;
-
-  //   if (data?.projects?.length === 0) navigate({ to: "/onboarding" });
-  if (data.length === 0) navigate({ to: "/onboarding" });
+  if (projects.length === 0) return navigate({ to: "/onboarding" });
 
   return (
     <SidebarProvider>
       <AppSidebar
-        projects={data}
-        activeProjectId={data[0].id}
+        projects={projects}
+        activeProjectId={activeProjectId}
         setActiveProject={(projectId) => {
-          console.log(projectId);
+          setCurrentProjectMutation.mutate(projectId);
         }}
       />
       <SidebarInset>
@@ -89,7 +119,14 @@ function Index() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <FileTree initialPath="/Users/marlin/fenn" />
+          {isLocalPathPending ? (
+            // <div className="flex h-full w-full items-center justify-center">
+            //   <Loader2 className="h-4 w-4 animate-spin" />
+            // </div>
+            <div>Loading...</div>
+          ) : (
+            localPath && <FileTree initialPath={localPath} />
+          )}
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
             <div className="bg-muted/50 aspect-video rounded-xl" />
             <div className="bg-muted/50 aspect-video rounded-xl" />
