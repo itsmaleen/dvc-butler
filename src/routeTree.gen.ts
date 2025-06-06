@@ -12,17 +12,24 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as OnboardingImport } from './routes/onboarding'
+import { Route as dashboardRouteImport } from './routes/(dashboard)/route'
 import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as dashboardIndexImport } from './routes/(dashboard)/index'
 import { Route as SettingsRemoteStorageImport } from './routes/settings/remote-storage'
 import { Route as SettingsLocalDataImport } from './routes/settings/local-data'
 import { Route as SettingsGitConfigImport } from './routes/settings/git-config'
+import { Route as dashboardDicomViewerImport } from './routes/(dashboard)/dicom-viewer'
 
 // Create/Update Routes
 
 const OnboardingRoute = OnboardingImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const dashboardRouteRoute = dashboardRouteImport.update({
+  id: '/(dashboard)',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -33,9 +40,9 @@ const SettingsIndexRoute = SettingsIndexImport.update({
 } as any)
 
 const dashboardIndexRoute = dashboardIndexImport.update({
-  id: '/(dashboard)/',
+  id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => dashboardRouteRoute,
 } as any)
 
 const SettingsRemoteStorageRoute = SettingsRemoteStorageImport.update({
@@ -56,16 +63,36 @@ const SettingsGitConfigRoute = SettingsGitConfigImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const dashboardDicomViewerRoute = dashboardDicomViewerImport.update({
+  id: '/dicom-viewer',
+  path: '/dicom-viewer',
+  getParentRoute: () => dashboardRouteRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/(dashboard)': {
+      id: '/(dashboard)'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof dashboardRouteImport
+      parentRoute: typeof rootRoute
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingImport
       parentRoute: typeof rootRoute
+    }
+    '/(dashboard)/dicom-viewer': {
+      id: '/(dashboard)/dicom-viewer'
+      path: '/dicom-viewer'
+      fullPath: '/dicom-viewer'
+      preLoaderRoute: typeof dashboardDicomViewerImport
+      parentRoute: typeof dashboardRouteImport
     }
     '/settings/git-config': {
       id: '/settings/git-config'
@@ -93,7 +120,7 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof dashboardIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof dashboardRouteImport
     }
     '/settings/': {
       id: '/settings/'
@@ -107,17 +134,33 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
+interface dashboardRouteRouteChildren {
+  dashboardDicomViewerRoute: typeof dashboardDicomViewerRoute
+  dashboardIndexRoute: typeof dashboardIndexRoute
+}
+
+const dashboardRouteRouteChildren: dashboardRouteRouteChildren = {
+  dashboardDicomViewerRoute: dashboardDicomViewerRoute,
+  dashboardIndexRoute: dashboardIndexRoute,
+}
+
+const dashboardRouteRouteWithChildren = dashboardRouteRoute._addFileChildren(
+  dashboardRouteRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
+  '/': typeof dashboardIndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/dicom-viewer': typeof dashboardDicomViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
-  '/': typeof dashboardIndexRoute
   '/settings': typeof SettingsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
+  '/dicom-viewer': typeof dashboardDicomViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
@@ -127,7 +170,9 @@ export interface FileRoutesByTo {
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/(dashboard)': typeof dashboardRouteRouteWithChildren
   '/onboarding': typeof OnboardingRoute
+  '/(dashboard)/dicom-viewer': typeof dashboardDicomViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
@@ -138,15 +183,17 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/onboarding'
+    | '/dicom-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
-    | '/'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/onboarding'
+    | '/dicom-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
@@ -154,7 +201,9 @@ export interface FileRouteTypes {
     | '/settings'
   id:
     | '__root__'
+    | '/(dashboard)'
     | '/onboarding'
+    | '/(dashboard)/dicom-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
@@ -164,20 +213,20 @@ export interface FileRouteTypes {
 }
 
 export interface RootRouteChildren {
+  dashboardRouteRoute: typeof dashboardRouteRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
   SettingsGitConfigRoute: typeof SettingsGitConfigRoute
   SettingsLocalDataRoute: typeof SettingsLocalDataRoute
   SettingsRemoteStorageRoute: typeof SettingsRemoteStorageRoute
-  dashboardIndexRoute: typeof dashboardIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  dashboardRouteRoute: dashboardRouteRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   SettingsGitConfigRoute: SettingsGitConfigRoute,
   SettingsLocalDataRoute: SettingsLocalDataRoute,
   SettingsRemoteStorageRoute: SettingsRemoteStorageRoute,
-  dashboardIndexRoute: dashboardIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 
@@ -191,16 +240,27 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
+        "/(dashboard)",
         "/onboarding",
         "/settings/git-config",
         "/settings/local-data",
         "/settings/remote-storage",
-        "/(dashboard)/",
         "/settings/"
+      ]
+    },
+    "/(dashboard)": {
+      "filePath": "(dashboard)/route.tsx",
+      "children": [
+        "/(dashboard)/dicom-viewer",
+        "/(dashboard)/"
       ]
     },
     "/onboarding": {
       "filePath": "onboarding.tsx"
+    },
+    "/(dashboard)/dicom-viewer": {
+      "filePath": "(dashboard)/dicom-viewer.tsx",
+      "parent": "/(dashboard)"
     },
     "/settings/git-config": {
       "filePath": "settings/git-config.tsx"
@@ -212,7 +272,8 @@ export const routeTree = rootRoute
       "filePath": "settings/remote-storage.tsx"
     },
     "/(dashboard)/": {
-      "filePath": "(dashboard)/index.tsx"
+      "filePath": "(dashboard)/index.tsx",
+      "parent": "/(dashboard)"
     },
     "/settings/": {
       "filePath": "settings/index.tsx"

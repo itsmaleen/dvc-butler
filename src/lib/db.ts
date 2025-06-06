@@ -67,18 +67,17 @@ export async function createProject(
 
   // Insert storage config based on the storage type
   const storageType = remoteStorageConfig.storageType;
-  let storageConfigQuery;
 
   if (storageType === "local") {
-    storageConfigQuery = await db.execute(
+    await db.execute(
       `INSERT INTO storage_configs (
         project_id, storage_type, local_path
       ) VALUES (?, ?, ?) RETURNING id`,
       [projectId, storageType, remoteStorageConfig.localPath]
     );
-  } else {
+  } else if (storageType !== "none") {
     // Handle cloud storage configs
-    storageConfigQuery = await db.execute(
+    await db.execute(
       `INSERT INTO storage_configs (
         project_id, storage_type, bucket_name, access_key, secret_key,
         connection_string, project_id_cloud, key_file_path
@@ -139,7 +138,6 @@ export async function createProject(
 
   return {
     projectId,
-    storageConfigId: storageConfigQuery.lastInsertId,
   };
 }
 

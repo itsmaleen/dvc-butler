@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight, ChevronDown, Folder, File } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 interface FileNode {
   name: string;
@@ -76,6 +77,8 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     const fullPath = path + "/" + node.name;
     const isExpanded = expandedFolders.has(fullPath);
     const isSelected = selectedPaths.has(fullPath);
+    const isDicomFile =
+      !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
 
     return (
       <div key={fullPath}>
@@ -106,7 +109,17 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
           ) : (
             <div className="flex items-center gap-1 text-sm">
               <File className="h-4 w-4 text-gray-500" />
-              <span>{node.name}</span>
+              {isDicomFile ? (
+                <Link
+                  to="/dicom-viewer"
+                  search={{ path: fullPath }}
+                  className="text-blue-500 hover:underline"
+                >
+                  {node.name}
+                </Link>
+              ) : (
+                <span>{node.name}</span>
+              )}
             </div>
           )}
           <span className="ml-auto text-sm text-muted-foreground">

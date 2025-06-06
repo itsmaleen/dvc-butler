@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
 export const Route = createFileRoute("/onboarding")({
   component: RouteComponent,
@@ -141,7 +142,13 @@ function RouteComponent() {
       localDataConfig,
       remoteStorageConfig
     )
-      .then(() => {
+      .then(async () => {
+        const result = await invoke("init_dvc_project", {
+          path: localDataConfig.folderPath,
+        });
+        console.log("result");
+        console.log(result);
+
         toast("Project created successfully", {
           description: `Project ${projectInfo.name} has been created`,
         });
@@ -152,7 +159,7 @@ function RouteComponent() {
       .catch((error) => {
         console.error(error);
         toast("Error creating project", {
-          description: error.message,
+          description: error,
         });
       });
   };
