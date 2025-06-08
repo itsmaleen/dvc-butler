@@ -3,17 +3,27 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import { viteCommonjs } from "@originjs/vite-plugin-commonjs";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  assetsInclude: ["**/*.wasm"],
+
   plugins: [
     TanStackRouterVite({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    viteCommonjs(),
   ],
+
+  // seems like only required in dev mode
+  optimizeDeps: {
+    exclude: ["@cornerstonejs/dicom-image-loader"],
+    include: ["dicom-parser"],
+  },
 
   resolve: {
     alias: {

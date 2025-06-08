@@ -15,7 +15,6 @@
     "fs:read-dirs",
     "fs:read-files",
     "fs:scope",
-    "dialog:default",
     "dialog:default"
   ]
 }

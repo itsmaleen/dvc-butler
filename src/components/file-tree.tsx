@@ -141,5 +141,18 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     return <div>Loading...</div>;
   }
 
+  // Get the base directory name from initialPath
+  const baseDirName = initialPath.split("/").pop() || "";
+
+  // If the tree's name matches the base directory, we're already in that directory
+  // so we should render its children directly
+  if (tree.name === baseDirName && tree.children) {
+    return (
+      <div className="py-2">
+        {tree.children.map((child) => renderNode(child, initialPath))}
+      </div>
+    );
+  }
+
   return <div className="py-2">{renderNode(tree, initialPath)}</div>;
 }
