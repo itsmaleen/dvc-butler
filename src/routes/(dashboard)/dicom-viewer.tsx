@@ -27,63 +27,83 @@ function RouteComponent() {
   const viewerRef = useRef<HTMLDivElement>(null);
   const renderingEngineRef = useRef<RenderingEngine | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize Cornerstone
   useEffect(() => {
-    if (!path || !viewerRef.current) return;
-
-    const element = viewerRef.current;
-    element.style.width = "100%";
-    element.style.height = "600px";
-
-    async function initializeViewer() {
+    async function initializeCornerstone() {
       try {
-        setError(null);
         await coreInit();
         await dicomImageLoaderInit();
-
-        const renderingEngineId = "myRenderingEngine";
-        const renderingEngine = new RenderingEngine(renderingEngineId);
-        renderingEngineRef.current = renderingEngine;
-
-        const viewportId = "CT_AXIAL_STACK";
-
-        const viewportInput = {
-          viewportId,
-          element,
-          type: Enums.ViewportType.STACK,
-        };
-
-        renderingEngine.enableElement(viewportInput);
-
-        const viewport = renderingEngine.getViewport(
-          viewportId
-        ) as StackViewport;
-
-        // Load the local DICOM file
-        const imageId = await loadLocalDicomFile(path);
-        await prefetchMetadataInformation([imageId]);
-        const stack = convertMultiframeImageIds([imageId]);
-
-        await viewport.setStack(stack);
-        viewport.render();
+        setIsInitialized(true);
       } catch (error) {
-        console.error("Error initializing DICOM viewer:", error);
+        console.error("Error initializing Cornerstone:", error);
         setError(
-          error instanceof Error ? error.message : "Failed to load DICOM file"
+          error instanceof Error ? error.message : "Failed to initialize viewer"
         );
       }
     }
 
-    initializeViewer();
+    initializeCornerstone();
 
-    // Cleanup function
     return () => {
       if (renderingEngineRef.current) {
         renderingEngineRef.current.destroy();
         renderingEngineRef.current = null;
       }
     };
-  }, [path]);
+  }, []);
+
+  // Handle DICOM loading
+  useEffect(() => {
+    if (!path || !viewerRef.current || !isInitialized) return;
+
+    const element = viewerRef.current;
+    element.style.width = "100%";
+    element.style.height = "600px";
+
+    async function loadDicom() {
+      try {
+        setError(null);
+
+        // Create new rendering engine if needed
+        if (!renderingEngineRef.current) {
+          const renderingEngineId = "myRenderingEngine";
+          const renderingEngine = new RenderingEngine(renderingEngineId);
+          renderingEngineRef.current = renderingEngine;
+        }
+
+        const viewportId = "CT_AXIAL_STACK";
+        const viewportInput = {
+          viewportId,
+          element,
+          type: Enums.ViewportType.STACK,
+        };
+
+        // Enable the viewport
+        renderingEngineRef.current.enableElement(viewportInput);
+        const viewport = renderingEngineRef.current.getViewport(
+          viewportId
+        ) as StackViewport;
+
+        // Load and render the DICOM
+        const imageId = await loadLocalDicomFile(path);
+        await prefetchMetadataInformation([imageId]);
+        const stack = convertMultiframeImageIds([imageId]);
+
+        await viewport.setStack(stack);
+        viewport.resize();
+        viewport.render();
+      } catch (error) {
+        console.error("Error loading DICOM:", error);
+        setError(
+          error instanceof Error ? error.message : "Failed to load DICOM file"
+        );
+      }
+    }
+
+    loadDicom();
+  }, [path, isInitialized]);
 
   if (!path) {
     return <div>No DICOM file selected</div>;

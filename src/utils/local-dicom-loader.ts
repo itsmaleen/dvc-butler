@@ -7,12 +7,19 @@ import { readFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 export async function loadLocalDicomFile(filePath: string): Promise<string> {
   try {
     // Read the file using Tauri's fs API
-    const fileContent = await invoke<string>("get_file_binary", {
+    const base64Content = await invoke<string>("get_file_binary", {
       path: filePath,
     });
 
+    // Convert base64 to binary
+    const binaryContent = atob(base64Content);
+    const bytes = new Uint8Array(binaryContent.length);
+    for (let i = 0; i < binaryContent.length; i++) {
+      bytes[i] = binaryContent.charCodeAt(i);
+    }
+
     // Create a blob URL for the file
-    const blob = new Blob([fileContent], { type: "application/dicom" });
+    const blob = new Blob([bytes]);
 
     const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(blob);
     return imageId;
@@ -110,9 +117,9 @@ export async function loadAndViewImage(
     }
     const sopclassuid = document.getElementById("sopclassuid");
     if (sopclassuid) {
-      sopclassuid.innerHTML = `${
-        sopCommonModule.sopClassUID
-      } [${uids[sopCommonModule.sopClassUID as keyof typeof uids]}]`;
+      sopclassuid.innerHTML = `${sopCommonModule.sopClassUID} [${
+        uids[sopCommonModule.sopClassUID as keyof typeof uids]
+      }]`;
       const sopInstanceUidElement = document.getElementById("sopinstanceuid");
       if (sopInstanceUidElement) {
         sopInstanceUidElement.innerHTML = sopCommonModule.sopInstanceUID;

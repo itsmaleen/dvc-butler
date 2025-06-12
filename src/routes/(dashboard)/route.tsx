@@ -7,7 +7,7 @@ import {
 import { getCurrentProject, getProjects, setCurrentProject } from "@/lib/db";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GalleryVerticalEnd } from "lucide-react";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,6 +23,7 @@ export const Route = createRootRoute({
 });
 
 function DashboardRootComponent() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
@@ -68,7 +69,7 @@ function DashboardRootComponent() {
   if (error) return "An error has occurred: " + error.message;
   if (projects.length === 0) {
     console.log("no projects");
-    // return navigate({ to: "/onboarding" });
+    return navigate({ to: "/onboarding" });
   }
 
   return (

@@ -50,7 +50,14 @@ pub fn get_file_tree_structure(path: &str) -> Result<FileNode, String> {
 
 #[tauri::command]
 pub fn get_file_binary(path: &str) -> Result<String, String> {
-    let path = Path::new(path);
+    // Normalize path separators for Windows
+    let normalized_path = if cfg!(windows) {
+        path.replace("/", &std::path::MAIN_SEPARATOR.to_string())
+    } else {
+        path.to_string()
+    };
+
+    let path = Path::new(&normalized_path);
 
     println!("path.display(): {}", path.display());
 

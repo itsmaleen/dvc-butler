@@ -141,12 +141,8 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     return <div>Loading...</div>;
   }
 
-  // Get the base directory name from initialPath
-  const baseDirName = initialPath.split("/").pop() || "";
-
-  // If the tree's name matches the base directory, we're already in that directory
-  // so we should render its children directly
-  if (tree.name === baseDirName && tree.children) {
+  // Always render the children of the root folder
+  if (tree.children) {
     return (
       <div className="py-2">
         {tree.children.map((child) => renderNode(child, initialPath))}
@@ -154,5 +150,6 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     );
   }
 
-  return <div className="py-2">{renderNode(tree, initialPath)}</div>;
+  // Fallback case if somehow there are no children
+  return <div className="py-2">No files found</div>;
 }
