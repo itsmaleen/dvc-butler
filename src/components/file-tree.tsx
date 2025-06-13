@@ -178,7 +178,9 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     const isDicomFile =
       !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
     // Get git status for this file (normalize to match statusMap)
-    const gitStatusIcon = getGitStatusIcon(gitStatus[`/${node.name}`]);
+-   const gitStatusIcon = getGitStatusIcon(gitStatus[`/${node.name}`]);
++   const relPath = fullPath.replace(initialPath, "");
++   const gitStatusIcon = getGitStatusIcon(gitStatus[relPath]);
 
     return (
       <div key={fullPath}>
