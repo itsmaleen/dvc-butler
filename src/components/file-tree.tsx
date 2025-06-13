@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight, ChevronDown, Folder, File } from "lucide-react";
@@ -24,6 +24,19 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
   );
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
 
+  // Load selected files from state on mount
+  useEffect(() => {
+    const loadSelectedFiles = async () => {
+      try {
+        const files = await invoke<string[]>("get_selected_files");
+        setSelectedPaths(new Set(files));
+      } catch (error) {
+        console.error("Error loading selected files:", error);
+      }
+    };
+    loadSelectedFiles();
+  }, []);
+
   const loadTree = async () => {
     try {
       const result = await invoke<FileNode>("get_file_tree_structure", {
@@ -36,9 +49,9 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
   };
 
   // Load tree on mount
-  useState(() => {
+  useEffect(() => {
     loadTree();
-  });
+  }, []);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders((prev) => {
@@ -52,17 +65,28 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     });
   };
 
-  const toggleSelection = (path: string) => {
-    setSelectedPaths((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
+  const toggleSelection = async (path: string) => {
+    try {
+      if (selectedPaths.has(path)) {
+        await invoke("remove_selected_file", { path });
+        setSelectedPaths((prev) => {
+          const next = new Set(prev);
+          next.delete(path);
+          onSelectionChange?.(Array.from(next));
+          return next;
+        });
       } else {
-        next.add(path);
+        await invoke("add_selected_file", { path });
+        setSelectedPaths((prev) => {
+          const next = new Set(prev);
+          next.add(path);
+          onSelectionChange?.(Array.from(next));
+          return next;
+        });
       }
-      onSelectionChange?.(Array.from(next));
-      return next;
-    });
+    } catch (error) {
+      console.error("Error toggling file selection:", error);
+    }
   };
 
   const formatSize = (bytes: number): string => {
@@ -74,6 +98,11 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
   };
 
   const renderNode = (node: FileNode, path: string, level: number = 0) => {
+    // Skip hidden files and folders (those starting with .)
+    if (node.name.startsWith(".")) {
+      return null;
+    }
+
     const fullPath = path + "/" + node.name;
     const isExpanded = expandedFolders.has(fullPath);
     const isSelected = selectedPaths.has(fullPath);

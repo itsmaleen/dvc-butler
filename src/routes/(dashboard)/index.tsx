@@ -1,13 +1,19 @@
 import { FileTree } from "@/components/file-tree";
+import { CommandCenter } from "@/components/command-center";
 import { getCurrentProject, getLocalPath } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(dashboard)/")({
   component: Index,
 });
 
 function Index() {
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+
   const { data: activeProjectId } = useQuery({
     queryKey: ["activeProjectId"],
     queryFn: async () => {
@@ -19,32 +25,48 @@ function Index() {
   const { data: localPath, isPending: isLocalPathPending } = useQuery({
     queryKey: ["localPath", activeProjectId],
     queryFn: async () => {
-      console.log("activeProjectId");
       const localPath = await getLocalPath(activeProjectId ?? 0);
-      console.log("local path");
-      console.log(localPath);
       return localPath;
     },
   });
+
+  const handleCommandAction = async (action: string) => {
+    switch (action) {
+      case "clear":
+        setSelectedFiles([]);
+        await invoke("clear_selected_files");
+        break;
+      case "add":
+        for (const file of selectedFiles) {
+          const result = await invoke("add_dvc_file", {
+            path: localPath,
+            file,
+          });
+          console.log(result);
+          toast.success(`Added and staged ${file} (DVC + git add)`);
+        }
+        break;
+    }
+  };
 
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {isLocalPathPending ? (
-          // <div className="flex h-full w-full items-center justify-center">
-          //   <Loader2 className="h-4 w-4 animate-spin" />
-          // </div>
           <div>Loading...</div>
         ) : (
-          localPath && <FileTree initialPath={localPath} />
+          localPath && (
+            <FileTree
+              initialPath={localPath}
+              onSelectionChange={setSelectedFiles}
+            />
+          )
         )}
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-          <div className="bg-muted/50 aspect-video rounded-xl" />
-        </div>
-        <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
       </div>
+      <CommandCenter
+        selectedFiles={selectedFiles}
+        onAction={handleCommandAction}
+      />
     </>
   );
 }

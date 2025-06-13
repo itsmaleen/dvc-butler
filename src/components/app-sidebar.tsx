@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Command,
+  Folder,
   Frame,
   GalleryVerticalEnd,
   Map,
@@ -152,6 +153,14 @@ const data = {
       icon: Map,
     },
   ],
+
+  nav: [
+    {
+      name: "Files",
+      url: "/",
+      icon: Folder,
+    },
+  ],
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -175,12 +184,12 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavMain items={data.navMain} /> */}
+        <NavProjects projects={data.nav} />
       </SidebarContent>
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter>
+      </SidebarFooter> */}
       <SidebarRail />
     </Sidebar>
   );

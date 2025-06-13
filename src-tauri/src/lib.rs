@@ -2,6 +2,7 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 
 mod dvc;
 mod file;
+mod state;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,11 +29,17 @@ pub fn run() {
                 .add_migrations("sqlite:fenn.db", migrations)
                 .build(),
         )
+        .manage(state::SelectedFilesState::new(state::SelectedFiles::new()))
         .invoke_handler(tauri::generate_handler![
             file::get_file_tree_structure,
             file::get_file_binary,
             file::get_relative_path,
-            dvc::init_dvc_project
+            dvc::init_dvc_project,
+            file::add_selected_file,
+            file::remove_selected_file,
+            file::get_selected_files,
+            file::clear_selected_files,
+            dvc::add_dvc_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

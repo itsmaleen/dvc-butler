@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::Path;
+use tauri::State;
+
+use crate::state::SelectedFilesState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
@@ -83,4 +86,34 @@ pub fn get_relative_path(absolute_path: &str) -> Result<String, String> {
         .strip_prefix(home_path)
         .map(|p| p.to_string_lossy().to_string())
         .map_err(|e| format!("Failed to convert path: {}", e))
+}
+
+#[tauri::command]
+pub fn add_selected_file(state: State<'_, SelectedFilesState>, path: String) -> Result<(), String> {
+    let mut selected_files = state.lock().map_err(|e| e.to_string())?;
+    selected_files.add_path(path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn remove_selected_file(
+    state: State<'_, SelectedFilesState>,
+    path: String,
+) -> Result<(), String> {
+    let mut selected_files = state.lock().map_err(|e| e.to_string())?;
+    selected_files.remove_path(&path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_selected_files(state: State<'_, SelectedFilesState>) -> Result<Vec<String>, String> {
+    let selected_files = state.lock().map_err(|e| e.to_string())?;
+    Ok(selected_files.paths.clone())
+}
+
+#[tauri::command]
+pub fn clear_selected_files(state: State<'_, SelectedFilesState>) -> Result<(), String> {
+    let mut selected_files = state.lock().map_err(|e| e.to_string())?;
+    selected_files.clear();
+    Ok(())
 }

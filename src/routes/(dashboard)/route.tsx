@@ -4,10 +4,20 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getCurrentProject, getProjects, setCurrentProject } from "@/lib/db";
+import {
+  getCurrentProject,
+  getProjects,
+  setCurrentProject,
+  getLocalPath,
+} from "@/lib/db";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GalleryVerticalEnd } from "lucide-react";
-import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  Outlet,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,12 +29,19 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 export const Route = createRootRoute({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      path: search.path as string | undefined,
+    };
+  },
   component: DashboardRootComponent,
 });
 
 function DashboardRootComponent() {
   const navigate = useNavigate();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const { path } = Route.useSearch() as { path: string | undefined };
 
   const {
     isPending,
@@ -52,6 +69,14 @@ function DashboardRootComponent() {
     },
   });
 
+  const { data: localPath } = useQuery({
+    queryKey: ["localPath", activeProjectId],
+    queryFn: async () => {
+      const localPath = await getLocalPath(activeProjectId ?? 0);
+      return localPath;
+    },
+  });
+
   const setCurrentProjectMutation = useMutation({
     mutationFn: (projectId: number) => setCurrentProject(projectId),
     onSuccess: () => {
@@ -72,6 +97,10 @@ function DashboardRootComponent() {
     return navigate({ to: "/onboarding" });
   }
 
+  // Get the current file path from the route state
+  const currentPath = router.state.location.pathname;
+  const fileName = currentPath.split("/").pop() || "";
+
   return (
     <SidebarProvider>
       <AppSidebar
@@ -91,15 +120,17 @@ function DashboardRootComponent() {
             />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                  <BreadcrumbLink href="/">Files</BreadcrumbLink>
                 </BreadcrumbItem>
+                {path && (
+                  <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{path}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </>
+                )}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
