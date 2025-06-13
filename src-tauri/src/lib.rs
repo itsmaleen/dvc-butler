@@ -40,6 +40,7 @@ pub fn run() {
             file::get_selected_files,
             file::clear_selected_files,
             dvc::add_dvc_file,
+            file::get_git_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

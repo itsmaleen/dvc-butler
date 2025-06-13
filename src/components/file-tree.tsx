@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronRight, ChevronDown, Folder, File } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  File,
+  PlusCircle,
+  CircleDot,
+  CircleDashed,
+  CheckCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 
@@ -10,6 +19,11 @@ interface FileNode {
   size: number;
   is_directory: boolean;
   children?: FileNode[];
+}
+
+interface GitStatusEntry {
+  path: string;
+  status: string; // "untracked", "modified", "added", "committed", etc.
 }
 
 interface FileTreeProps {
@@ -23,6 +37,7 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     new Set()
   );
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [gitStatus, setGitStatus] = useState<Record<string, string>>({});
 
   // Load selected files from state on mount
   useEffect(() => {
@@ -48,9 +63,29 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     }
   };
 
-  // Load tree on mount
+  // Load git status for all files in the repo
+  const loadGitStatus = async () => {
+    try {
+      const result = await invoke<GitStatusEntry[]>("get_git_status", {
+        path: initialPath,
+      });
+      const statusMap: Record<string, string> = {};
+      for (const entry of result) {
+        // Normalize path to match FileTree's fullPath
+        let normalized = entry.path.replace(/\\/g, "/");
+        if (!normalized.startsWith("/")) normalized = "/" + normalized;
+        statusMap[normalized] = entry.status;
+      }
+      setGitStatus(statusMap);
+    } catch (error) {
+      console.error("Error loading git status:", error);
+    }
+  };
+
+  // Load tree and git status on mount
   useEffect(() => {
     loadTree();
+    loadGitStatus();
   }, []);
 
   const toggleFolder = (path: string) => {
@@ -97,6 +132,40 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
+  // Helper to get git status icon
+  const getGitStatusIcon = (status?: string) => {
+    switch (status) {
+      case "untracked":
+        return (
+          <span title="Untracked">
+            <PlusCircle className="h-4 w-4 text-yellow-500" />
+          </span>
+        );
+      case "modified":
+        return (
+          <span title="Modified">
+            <CircleDot className="h-4 w-4 text-orange-500" />
+          </span>
+        );
+      case "added":
+        return (
+          <span title="Staged/Added">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </span>
+        );
+      case "deleted":
+        return (
+          <span title="Deleted">
+            <CircleDashed className="h-4 w-4 text-red-500" />
+          </span>
+        );
+      case "committed":
+        return null; // No icon for committed/clean
+      default:
+        return null;
+    }
+  };
+
   const renderNode = (node: FileNode, path: string, level: number = 0) => {
     // Skip hidden files and folders (those starting with .)
     if (node.name.startsWith(".")) {
@@ -108,6 +177,8 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     const isSelected = selectedPaths.has(fullPath);
     const isDicomFile =
       !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
+    // Get git status for this file (normalize to match statusMap)
+    const gitStatusIcon = getGitStatusIcon(gitStatus[`/${node.name}`]);
 
     return (
       <div key={fullPath}>
@@ -151,6 +222,8 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
               )}
             </div>
           )}
+          {/* Git status icon */}
+          {gitStatusIcon}
           <span className="ml-auto text-sm text-muted-foreground">
             {formatSize(node.size)}
           </span>

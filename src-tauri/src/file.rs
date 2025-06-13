@@ -117,3 +117,53 @@ pub fn clear_selected_files(state: State<'_, SelectedFilesState>) -> Result<(), 
     selected_files.clear();
     Ok(())
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitStatusEntry {
+    pub path: String,
+    pub status: String, // e.g., "untracked", "modified", "staged", "committed"
+}
+
+#[tauri::command]
+pub fn get_git_status(path: &str) -> Result<Vec<GitStatusEntry>, String> {
+    let output = std::process::Command::new("git")
+        .arg("status")
+        .arg("--porcelain")
+        .current_dir(path)
+        .output()
+        .map_err(|e| format!("Failed to run git status: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "git status failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut entries = Vec::new();
+    for line in stdout.lines() {
+        // Format: XY <file>
+        // X = staged, Y = unstaged
+        let trimmed = line.trim();
+        if trimmed.len() < 3 {
+            continue;
+        }
+        let x = trimmed.chars().nth(0).unwrap();
+        let y = trimmed.chars().nth(1).unwrap();
+        let file_path = trimmed[3..].to_string();
+        let status = match (x, y) {
+            ('?', '?') => "untracked",
+            ('A', _) | (_, 'A') => "added",
+            ('M', _) | (_, 'M') => "modified",
+            ('D', _) | (_, 'D') => "deleted",
+            (' ', ' ') => "committed",
+            _ => "other",
+        };
+        entries.push(GitStatusEntry {
+            path: file_path,
+            status: status.to_string(),
+        });
+    }
+    Ok(entries)
+}
