@@ -42,6 +42,13 @@ pub fn run() {
             file::clear_selected_files,
             dvc::add_dvc_file,
             git::git_status,
+            git::git_commit_and_push,
+            git::git_pull,
+            git::git_checkout,
+            git::git_stash,
+            git::git_list_branches,
+            git::git_current_branch,
+            git::git_switch_branch,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

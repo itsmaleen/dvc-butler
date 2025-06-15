@@ -39,7 +39,6 @@ export const Route = createRootRoute({
 
 function DashboardRootComponent() {
   const navigate = useNavigate();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { path } = Route.useSearch() as { path: string | undefined };
 
@@ -69,14 +68,6 @@ function DashboardRootComponent() {
     },
   });
 
-  const { data: localPath } = useQuery({
-    queryKey: ["localPath", activeProjectId],
-    queryFn: async () => {
-      const localPath = await getLocalPath(activeProjectId ?? 0);
-      return localPath;
-    },
-  });
-
   const setCurrentProjectMutation = useMutation({
     mutationFn: (projectId: number) => setCurrentProject(projectId),
     onSuccess: () => {
@@ -96,10 +87,6 @@ function DashboardRootComponent() {
     console.log("no projects");
     return navigate({ to: "/onboarding" });
   }
-
-  // Get the current file path from the route state
-  const currentPath = router.state.location.pathname;
-  const fileName = currentPath.split("/").pop() || "";
 
   return (
     <SidebarProvider>

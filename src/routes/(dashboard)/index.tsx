@@ -65,11 +65,15 @@ function Index() {
 
   return (
     <>
-      <TopBar onPush={() => setPushSidebarOpen(true)} />
+      <TopBar
+        repoPath={localPath ?? ""}
+        onPush={() => setPushSidebarOpen(true)}
+      />
       <PushSidebar
         open={pushSidebarOpen}
         onOpenChange={setPushSidebarOpen}
         stagedFiles={stagedFiles.map((f) => f.path)}
+        repoPath={localPath ?? ""}
       />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {isLocalPathPending ? (

@@ -10,20 +10,45 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import * as React from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export function PushSidebar({
   open,
   onOpenChange,
   stagedFiles,
+  repoPath,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   stagedFiles: string[];
+  repoPath: string;
 }) {
   const [summary, setSummary] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
 
   const canPush = summary.trim().length > 0;
+
+  const handleCommitAndPush = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await invoke<string>("git_commit_and_push", {
+        repoPath,
+        summary,
+        description,
+      });
+      setSummary("");
+      setDescription("");
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.toString() || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -69,12 +94,16 @@ export function PushSidebar({
           </div>
         </div>
         <SheetFooter>
-          <Button className="w-full" disabled={!canPush}>
-            Commit & Push
+          <Button
+            className="w-full"
+            disabled={!canPush || loading}
+            onClick={handleCommitAndPush}
+          >
+            {loading ? "Pushing..." : "Commit & Push"}
           </Button>
-          {!canPush && (
+          {(!canPush || error) && (
             <div className="text-xs text-destructive mt-2 w-full text-center">
-              Enter a commit summary to enable push
+              {!canPush ? "Enter a commit summary to enable push" : error}
             </div>
           )}
         </SheetFooter>
