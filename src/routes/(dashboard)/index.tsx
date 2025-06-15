@@ -19,6 +19,9 @@ function Index() {
   const [stagedFiles, setStagedFiles] = useState<
     { path: string; status: string }[]
   >([]);
+  const [dvcStagedFiles, setDvcStagedFiles] = useState<
+    { path: string; status: string }[]
+  >([]);
 
   const { data: activeProjectId } = useQuery({
     queryKey: ["activeProjectId"],
@@ -42,6 +45,11 @@ function Index() {
     })
       .then(setStagedFiles)
       .catch(() => setStagedFiles([]));
+    invoke<{ path: string; status: string }[]>("dvc_diff", {
+      path: localPath,
+    })
+      .then(setDvcStagedFiles)
+      .catch(() => setDvcStagedFiles([]));
   }, [localPath]);
 
   const handleCommandAction = async (action: string) => {
@@ -62,7 +70,6 @@ function Index() {
         break;
     }
   };
-
   return (
     <>
       <TopBar
@@ -83,6 +90,7 @@ function Index() {
             <FileTree
               initialPath={localPath}
               onSelectionChange={setSelectedFiles}
+              dvcStagedFiles={dvcStagedFiles}
             />
           )
         )}

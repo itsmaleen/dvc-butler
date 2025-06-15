@@ -41,6 +41,7 @@ pub fn run() {
             file::get_selected_files,
             file::clear_selected_files,
             dvc::add_dvc_file,
+            dvc::dvc_diff,
             git::git_status,
             git::git_commit_and_push,
             git::git_pull,

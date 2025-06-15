@@ -1,3 +1,5 @@
+use crate::git::StagedFile;
+use serde_json::Value;
 use std::process::Command;
 use tauri::command;
 
@@ -74,4 +76,55 @@ pub fn add_dvc_file(path: &str, file: &str) -> Result<String, String> {
         "Successfully added {} to DVC and staged .gitignore and {} for git",
         file, dvc_file
     ))
+}
+
+#[command]
+pub fn dvc_diff(path: &str) -> Result<Vec<StagedFile>, String> {
+    let output = Command::new("dvc")
+        .arg("diff")
+        .arg("--json")
+        .current_dir(path)
+        .output()
+        .map_err(|e| format!("Failed to run dvc diff: {}", e))?;
+
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: Value = serde_json::from_str(&stdout)
+        .map_err(|e| format!("Failed to parse dvc diff JSON: {}", e))?;
+
+    let mut files = Vec::new();
+    let categories = [
+        ("added", "added"),
+        ("deleted", "deleted"),
+        ("modified", "modified"),
+        ("renamed", "renamed"),
+        ("not in cache", "not in cache"),
+    ];
+
+    for (cat_key, status) in &categories {
+        if let Some(arr) = json.get(*cat_key).and_then(|v| v.as_array()) {
+            for entry in arr {
+                // For 'renamed', DVC gives objects with 'path' and 'path_old'. For others, just 'path'.
+                if *cat_key == "renamed" {
+                    if let Some(path) = entry.get("path").and_then(|v| v.as_str()) {
+                        files.push(StagedFile {
+                            path: path.to_string(),
+                            status: status.to_string(),
+                        });
+                    }
+                } else {
+                    if let Some(path) = entry.get("path").and_then(|v| v.as_str()) {
+                        files.push(StagedFile {
+                            path: path.to_string(),
+                            status: status.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    Ok(files)
 }

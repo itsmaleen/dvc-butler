@@ -26,9 +26,14 @@ interface FileNode {
 interface FileTreeProps {
   initialPath: string;
   onSelectionChange?: (selectedPaths: string[]) => void;
+  dvcStagedFiles: { path: string; status: string }[];
 }
 
-export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
+export function FileTree({
+  initialPath,
+  onSelectionChange,
+  dvcStagedFiles,
+}: FileTreeProps) {
   const [tree, setTree] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
@@ -154,6 +159,11 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     const isDicomFile =
       !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
     // DVC tracked icon
+
+    const node_status =
+      dvcStagedFiles.find((file) => file.path === node.name)?.status ||
+      node.git_status;
+
     const dvcTrackedIcon = node.has_dvc_file ? (
       <span title="DVC Tracked">
         <svg
@@ -223,9 +233,9 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
             </div>
           )}
           {/* Git status icon */}
-          {getGitStatusIcon(node.git_status)}
+          {getGitStatusIcon(node_status)}
           {/* Show git_status string for debugging/visibility */}
-          <span className="ml-2 text-xs text-gray-400">{node.git_status}</span>
+          <span className="ml-2 text-xs text-gray-400">{node_status}</span>
           <span className="ml-auto text-sm text-muted-foreground">
             {formatSize(node.size)}
           </span>
