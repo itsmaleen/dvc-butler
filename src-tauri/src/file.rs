@@ -13,6 +13,52 @@ pub struct FileNode {
     size: u64,
     is_directory: bool,
     children: Option<Vec<FileNode>>,
+    has_dvc_file: bool,
+    git_status: String,
+}
+
+fn get_git_status_for_path(path: &Path) -> String {
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    let file_name = path
+        .file_name()
+        .map(|n| n.to_string_lossy())
+        .unwrap_or_default();
+    let output = std::process::Command::new("git")
+        .arg("status")
+        .arg("--porcelain")
+        .current_dir(parent)
+        .output();
+    if let Ok(output) = output {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let trimmed = line.trim();
+                if trimmed.len() < 3 {
+                    continue;
+                }
+                let x = trimmed.chars().nth(0).unwrap();
+                let y = trimmed.chars().nth(1).unwrap();
+                let file_path = trimmed[3..].to_string();
+                if file_path == file_name {
+                    return match (x, y) {
+                        ('?', '?') => "untracked",
+                        ('A', _) | (_, 'A') => "added",
+                        ('M', _) | (_, 'M') => "modified",
+                        ('D', _) | (_, 'D') => "deleted",
+                        (' ', ' ') => "committed",
+                        _ => "other",
+                    }
+                    .to_string();
+                }
+            }
+            // If not found, treat as committed (clean)
+            "committed".to_string()
+        } else {
+            "error".to_string()
+        }
+    } else {
+        "error".to_string()
+    }
 }
 
 fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
@@ -23,11 +69,66 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
         .to_string_lossy()
         .to_string();
 
+    let has_dvc_file = if path.is_file() {
+        let mut dvc_file = path.to_path_buf();
+        dvc_file.set_extension(format!(
+            "{}{}",
+            path.extension()
+                .map(|e| e.to_string_lossy())
+                .unwrap_or_default(),
+            ".dvc"
+        ));
+        dvc_file.exists()
+    } else {
+        let dvc_file = path.to_path_buf();
+        if let Some(parent) = dvc_file.parent() {
+            let dvc_name = format!("{}.dvc", name);
+            let dvc_path = parent.join(dvc_name);
+            dvc_path.exists()
+        } else {
+            false
+        }
+    };
+
+    // Determine which file to check git status for
+    let git_status = if has_dvc_file {
+        if path.is_file() {
+            let mut dvc_file = path.to_path_buf();
+            dvc_file.set_extension(format!(
+                "{}{}",
+                path.extension()
+                    .map(|e| e.to_string_lossy())
+                    .unwrap_or_default(),
+                ".dvc"
+            ));
+            get_git_status_for_path(&dvc_file)
+        } else {
+            let dvc_file = path.to_path_buf();
+            if let Some(parent) = dvc_file.parent() {
+                let dvc_name = format!("{}.dvc", name);
+                let dvc_path = parent.join(dvc_name);
+                get_git_status_for_path(&dvc_path)
+            } else {
+                "error".to_string()
+            }
+        }
+    } else {
+        get_git_status_for_path(path)
+    };
+
     if metadata.is_dir() {
         let mut children = Vec::new();
         for entry in fs::read_dir(path)? {
             let entry = entry?;
-            let child = get_file_tree(&entry.path())?;
+            let entry_path = entry.path();
+            let entry_name = entry_path
+                .file_name()
+                .map(|n| n.to_string_lossy())
+                .unwrap_or_default();
+            if entry_name.ends_with(".dvc") {
+                continue;
+            }
+            let child = get_file_tree(&entry_path)?;
             children.push(child);
         }
         Ok(FileNode {
@@ -35,6 +136,8 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
             size: metadata.len(),
             is_directory: true,
             children: Some(children),
+            has_dvc_file,
+            git_status,
         })
     } else {
         Ok(FileNode {
@@ -42,6 +145,8 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
             size: metadata.len(),
             is_directory: false,
             children: None,
+            has_dvc_file,
+            git_status,
         })
     }
 }
@@ -122,48 +227,4 @@ pub fn clear_selected_files(state: State<'_, SelectedFilesState>) -> Result<(), 
 pub struct GitStatusEntry {
     pub path: String,
     pub status: String, // e.g., "untracked", "modified", "staged", "committed"
-}
-
-#[tauri::command]
-pub fn get_git_status(path: &str) -> Result<Vec<GitStatusEntry>, String> {
-    let output = std::process::Command::new("git")
-        .arg("status")
-        .arg("--porcelain")
-        .current_dir(path)
-        .output()
-        .map_err(|e| format!("Failed to run git status: {}", e))?;
-
-    if !output.status.success() {
-        return Err(format!(
-            "git status failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let mut entries = Vec::new();
-    for line in stdout.lines() {
-        // Format: XY <file>
-        // X = staged, Y = unstaged
-        let trimmed = line.trim();
-        if trimmed.len() < 3 {
-            continue;
-        }
-        let x = trimmed.chars().nth(0).unwrap();
-        let y = trimmed.chars().nth(1).unwrap();
-        let file_path = trimmed[3..].to_string();
-        let status = match (x, y) {
-            ('?', '?') => "untracked",
-            ('A', _) | (_, 'A') => "added",
-            ('M', _) | (_, 'M') => "modified",
-            ('D', _) | (_, 'D') => "deleted",
-            (' ', ' ') => "committed",
-            _ => "other",
-        };
-        entries.push(GitStatusEntry {
-            path: file_path,
-            status: status.to_string(),
-        });
-    }
-    Ok(entries)
 }

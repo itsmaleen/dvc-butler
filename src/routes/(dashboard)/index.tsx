@@ -3,9 +3,11 @@ import { CommandCenter } from "@/components/command-center";
 import { getCurrentProject, getLocalPath } from "@/lib/db";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
+import { TopBar } from "@/components/top-bar";
+import { PushSidebar } from "@/components/push-sidebar";
 
 export const Route = createFileRoute("/(dashboard)/")({
   component: Index,
@@ -13,6 +15,10 @@ export const Route = createFileRoute("/(dashboard)/")({
 
 function Index() {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [pushSidebarOpen, setPushSidebarOpen] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<
+    { path: string; status: string }[]
+  >([]);
 
   const { data: activeProjectId } = useQuery({
     queryKey: ["activeProjectId"],
@@ -29,6 +35,14 @@ function Index() {
       return localPath;
     },
   });
+
+  useEffect(() => {
+    invoke<{ path: string; status: string }[]>("git_status", {
+      repoPath: localPath,
+    })
+      .then(setStagedFiles)
+      .catch(() => setStagedFiles([]));
+  }, [localPath]);
 
   const handleCommandAction = async (action: string) => {
     switch (action) {
@@ -51,6 +65,12 @@ function Index() {
 
   return (
     <>
+      <TopBar onPush={() => setPushSidebarOpen(true)} />
+      <PushSidebar
+        open={pushSidebarOpen}
+        onOpenChange={setPushSidebarOpen}
+        stagedFiles={stagedFiles.map((f) => f.path)}
+      />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {isLocalPathPending ? (
           <div>Loading...</div>

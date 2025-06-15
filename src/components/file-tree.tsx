@@ -19,11 +19,8 @@ interface FileNode {
   size: number;
   is_directory: boolean;
   children?: FileNode[];
-}
-
-interface GitStatusEntry {
-  path: string;
-  status: string; // "untracked", "modified", "added", "committed", etc.
+  has_dvc_file: boolean;
+  git_status: string;
 }
 
 interface FileTreeProps {
@@ -37,7 +34,6 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     new Set()
   );
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
-  const [gitStatus, setGitStatus] = useState<Record<string, string>>({});
 
   // Load selected files from state on mount
   useEffect(() => {
@@ -63,29 +59,9 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     }
   };
 
-  // Load git status for all files in the repo
-  const loadGitStatus = async () => {
-    try {
-      const result = await invoke<GitStatusEntry[]>("get_git_status", {
-        path: initialPath,
-      });
-      const statusMap: Record<string, string> = {};
-      for (const entry of result) {
-        // Normalize path to match FileTree's fullPath
-        let normalized = entry.path.replace(/\\/g, "/");
-        if (!normalized.startsWith("/")) normalized = "/" + normalized;
-        statusMap[normalized] = entry.status;
-      }
-      setGitStatus(statusMap);
-    } catch (error) {
-      console.error("Error loading git status:", error);
-    }
-  };
-
   // Load tree and git status on mount
   useEffect(() => {
     loadTree();
-    loadGitStatus();
   }, []);
 
   const toggleFolder = (path: string) => {
@@ -177,10 +153,30 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
     const isSelected = selectedPaths.has(fullPath);
     const isDicomFile =
       !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
-    // Get git status for this file (normalize to match statusMap)
--   const gitStatusIcon = getGitStatusIcon(gitStatus[`/${node.name}`]);
-+   const relPath = fullPath.replace(initialPath, "");
-+   const gitStatusIcon = getGitStatusIcon(gitStatus[relPath]);
+    // DVC tracked icon
+    const dvcTrackedIcon = node.has_dvc_file ? (
+      <span title="DVC Tracked">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 20 20"
+          fill="none"
+          style={{ display: "inline", marginLeft: 2 }}
+        >
+          <circle
+            cx="10"
+            cy="10"
+            r="8"
+            stroke="#38bdf8"
+            strokeWidth="2"
+            fill="none"
+          />
+          <text x="10" y="15" textAnchor="middle" fontSize="10" fill="#38bdf8">
+            D
+          </text>
+        </svg>
+      </span>
+    ) : null;
 
     return (
       <div key={fullPath}>
@@ -207,6 +203,7 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
               )}
               <Folder className="h-4 w-4 text-blue-500" />
               <span>{node.name}</span>
+              {dvcTrackedIcon}
             </button>
           ) : (
             <div className="flex items-center gap-1 text-sm">
@@ -222,10 +219,13 @@ export function FileTree({ initialPath, onSelectionChange }: FileTreeProps) {
               ) : (
                 <span>{node.name}</span>
               )}
+              {dvcTrackedIcon}
             </div>
           )}
           {/* Git status icon */}
-          {gitStatusIcon}
+          {getGitStatusIcon(node.git_status)}
+          {/* Show git_status string for debugging/visibility */}
+          <span className="ml-2 text-xs text-gray-400">{node.git_status}</span>
           <span className="ml-auto text-sm text-muted-foreground">
             {formatSize(node.size)}
           </span>

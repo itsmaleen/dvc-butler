@@ -2,6 +2,7 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 
 mod dvc;
 mod file;
+mod git;
 mod state;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -40,7 +41,7 @@ pub fn run() {
             file::get_selected_files,
             file::clear_selected_files,
             dvc::add_dvc_file,
-            file::get_git_status,
+            git::git_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
