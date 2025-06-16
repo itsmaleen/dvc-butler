@@ -18,11 +18,28 @@ pub struct FileNode {
 }
 
 fn get_git_status_for_path(path: &Path) -> String {
+    // Find the git repository root
+    let repo_root_output = std::process::Command::new("git")
+        .arg("rev-parse")
+        .arg("--show-toplevel")
+        .current_dir(path.parent().unwrap_or_else(|| Path::new(".")))
+        .output();
+    let repo_root = if let Ok(output) = repo_root_output {
+        if output.status.success() {
+            let root = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !root.is_empty() {
+                Some(std::path::PathBuf::from(root))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
-    let file_name = path
-        .file_name()
-        .map(|n| n.to_string_lossy())
-        .unwrap_or_default();
     let output = std::process::Command::new("git")
         .arg("status")
         .arg("--porcelain")
@@ -31,6 +48,14 @@ fn get_git_status_for_path(path: &Path) -> String {
     if let Ok(output) = output {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
+            // Compute the relative path from the repo root
+            let rel_path = if let Some(repo_root) = &repo_root {
+                path.strip_prefix(repo_root)
+                    .map(|p| p.to_string_lossy().replace('\\', "/"))
+                    .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"))
+            } else {
+                path.to_string_lossy().replace('\\', "/")
+            };
             for line in stdout.lines() {
                 let trimmed = line.trim();
                 if trimmed.len() < 3 {
@@ -39,7 +64,8 @@ fn get_git_status_for_path(path: &Path) -> String {
                 let x = trimmed.chars().nth(0).unwrap();
                 let y = trimmed.chars().nth(1).unwrap();
                 let file_path = trimmed[3..].to_string();
-                if file_path == file_name {
+                // Compare using the relative path
+                if file_path == rel_path {
                     return match (x, y) {
                         ('?', '?') => "untracked",
                         ('A', _) | (_, 'A') => "added",
