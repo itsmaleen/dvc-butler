@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS current_project (
-    project_id INTEGER PRIMARY KEY,
+    project_id INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+

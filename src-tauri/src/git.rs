@@ -25,9 +25,10 @@ pub fn git_status(repo_path: String) -> Result<Vec<StagedFile>, String> {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let mut files = Vec::new();
     for line in stdout.lines() {
-        if let Some((status, path)) = line.split_once(' ') {
-            let status = status.trim();
-            let path = path.trim();
+        // Porcelain format: XY <SP>+ path (or paths for rename/copy)
+        if line.len() >= 3 {
+            let status = &line[0..2];
+            let path = line[3..].trim_start();
             if status != "??" {
                 files.push(StagedFile {
                     path: path.to_string(),

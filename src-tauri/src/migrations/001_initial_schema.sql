@@ -61,22 +61,3 @@ CREATE TABLE IF NOT EXISTS data_version_files (
     FOREIGN KEY (version_id) REFERENCES data_versions(id) ON DELETE CASCADE,
     FOREIGN KEY (file_id) REFERENCES data_files(id) ON DELETE CASCADE
 );
-
--- Create triggers to update updated_at timestamps
-CREATE TRIGGER IF NOT EXISTS update_projects_timestamp 
-AFTER UPDATE ON projects
-BEGIN
-    UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_storage_configs_timestamp 
-AFTER UPDATE ON storage_configs
-BEGIN
-    UPDATE storage_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS update_data_files_timestamp 
-AFTER UPDATE ON data_files
-BEGIN
-    UPDATE data_files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END; 

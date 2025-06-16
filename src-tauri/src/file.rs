@@ -244,7 +244,7 @@ pub fn remove_selected_file(
 #[tauri::command]
 pub fn get_selected_files(state: State<'_, SelectedFilesState>) -> Result<Vec<String>, String> {
     let selected_files = state.lock().map_err(|e| e.to_string())?;
-    Ok(selected_files.paths.clone())
+    Ok(selected_files.paths.iter().cloned().collect())
 }
 
 #[tauri::command]
