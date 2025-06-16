@@ -63,7 +63,7 @@ fn get_git_status_for_path(path: &Path) -> String {
                 }
                 let x = trimmed.chars().nth(0).unwrap();
                 let y = trimmed.chars().nth(1).unwrap();
-                let file_path = trimmed[3..].to_string();
+                let file_path = trimmed.chars().skip(3).collect::<String>();
                 // Compare using the relative path
                 if file_path == rel_path {
                     return match (x, y) {
@@ -152,6 +152,11 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
                 .map(|n| n.to_string_lossy())
                 .unwrap_or_default();
             if entry_name.ends_with(".dvc") {
+                continue;
+            }
+            // Skip symlinks to prevent infinite recursion
+            let entry_metadata = entry.metadata()?;
+            if entry_metadata.file_type().is_symlink() {
                 continue;
             }
             let child = get_file_tree(&entry_path)?;
