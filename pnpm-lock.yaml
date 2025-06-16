@@ -141,15 +141,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.5.0(vite@6.3.5(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.42.0)(tsx@4.19.4))
-      cornerstone-core:
-        specifier: ^2.6.1
-        version: 2.6.1
-      cornerstone-tools:
-        specifier: ^6.0.10
-        version: 6.0.10(cornerstone-core@2.6.1)
-      cornerstone-wado-image-loader:
-        specifier: ^4.13.2
-        version: 4.13.2(@babel/core@7.27.3)(cornerstone-core@2.6.1)(eslint@9.28.0(jiti@2.4.2))
       dicom-parser:
         specifier: ^1.8.21
         version: 1.8.21
@@ -177,13 +168,6 @@ packages:
   '@babel/core@7.27.3':
     resolution: {integrity: sha512-hyrN8ivxfvJ4i0fIJuV4EOlV0WDMz5Ui4StRTgVaAvWeiRCilXgwVvxJKtFQ3TKtHgJscB2YiXKGNJuVwhQMtA==}
     engines: {node: '>=6.9.0'}
-
-  '@babel/eslint-parser@7.27.5':
-    resolution: {integrity: sha512-HLkYQfRICudzcOtjGwkPvGc5nF1b4ljLZh1IRDj50lRZ718NAKVgQpIAUX8bfg6u/yuSKY3L7E0YzIV+OxrB8Q==}
-    engines: {node: ^10.13.0 || ^12.13.0 || >=14.0.0}
-    peerDependencies:
-      '@babel/core': ^7.11.0
-      eslint: ^7.5.0 || ^8.0.0 || ^9.0.0
 
   '@babel/generator@7.27.3':
     resolution: {integrity: sha512-xnlJYj5zepml8NXtjkG0WquFUv8RskFqyFcVgTBp5k+NaA/8uw/K+OSVf8AMGw5e9HKP2ETd5xpK5MLZQD6b4Q==}
@@ -666,9 +650,6 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0 || ^8.0.0-0 <8.0.0
 
-  '@babel/runtime@7.1.2':
-    resolution: {integrity: sha512-Y3SCjmhSupzFB6wcv1KmmFucH6gDVnI30WjOcicV10ju0cZjak3Jcs67YLIXBrmZYw1xCrVeJPbycFwrqNyxpg==}
-
   '@babel/runtime@7.22.11':
     resolution: {integrity: sha512-ee7jVNlWN09+KftVOu9n7S8gQzD/Z6hN/I8VBRXW4P1+Xe7kJGXMwu8vds4aGIMHZnNbdpSWCfZZtinytpcAvA==}
     engines: {node: '>=6.9.0'}
@@ -963,10 +944,6 @@ packages:
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
 
-  '@istanbuljs/schema@0.1.3':
-    resolution: {integrity: sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==}
-    engines: {node: '>=8'}
-
   '@jridgewell/gen-mapping@0.3.8':
     resolution: {integrity: sha512-imAbBGkb+ebQyxKgzv5Hu2nmROxoDOXHh80evxdoXNOrvAnVx7zimzc1Oo5h9RlfV4vPXaE2iM5pOFbvOCClWA==}
     engines: {node: '>=6.0.0'}
@@ -988,9 +965,6 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@jsdevtools/coverage-istanbul-loader@3.0.5':
-    resolution: {integrity: sha512-EUCPEkaRPvmHjWAAZkWMT7JDzpw7FKB00WTISaiXsbNOd5hCHg77XLA8sLYLFDo1zepYLo2w7GstN8YBqRXZfA==}
-
   '@kitware/vtk.js@32.12.1':
     resolution: {integrity: sha512-IF8WK7WDu84035ws3HZXz8wys8O81mmeFayYFbdBEfKjgZ4k0EGCK25YCGc6Q47Zxq1iutjs3Zs2xAgGjTgGQg==}
     hasBin: true
@@ -1002,9 +976,6 @@ packages:
   '@msgpack/msgpack@2.8.0':
     resolution: {integrity: sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==}
     engines: {node: '>= 10'}
-
-  '@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1':
-    resolution: {integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2170,35 +2141,11 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  convert-source-map@1.9.0:
-    resolution: {integrity: sha512-ASFBup0Mz1uyiIjANan1jzLQami9z1PoYSZCiiYW2FczPbenXc45FZdBZLzOT+r6+iciuEModtmCti+hjaAk0A==}
-
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
   core-js-compat@3.43.0:
     resolution: {integrity: sha512-2GML2ZsCc5LR7hZYz4AXmjQw8zuy2T//2QntwdnpuYI7jteT6GVYJL7F6C2C57R7gSYrcqVW3lAALefdbhBLDA==}
-
-  cornerstone-core@2.6.1:
-    resolution: {integrity: sha512-LAXjXwNnK2W65ZxpE7phVLjbijkYUrAQIGv5xqKjK8+dmIGlBxqvPHnyGwEqVDyKOWVrpXP6ymUPwrGGRwzgMg==}
-
-  cornerstone-math@0.1.10:
-    resolution: {integrity: sha512-23XSAyP7t70ANvhFyqwvva+zFd1bQ2d5GL7tg9qKE932WmImjA2Y9tiy5n0iTtnf51W/78Png8Lia2o4dCdJaQ==}
-
-  cornerstone-tools@6.0.10:
-    resolution: {integrity: sha512-FbqnuQPmGvwCV6jd4KQ5dQO8zBZH4RfpAPNLoJdcyXh5Cx8YSwB3v5w79z0LLy7GlHjb9lszphW18KMWwI1Z7Q==}
-    engines: {node: '>=8.16.0'}
-    peerDependencies:
-      cornerstone-core: ^2.6.0
-
-  cornerstone-wado-image-loader@4.13.2:
-    resolution: {integrity: sha512-NGqH44bY1VMY8OYuVykkLriNtZQrmoZU/S6f/1t1xX3rMc+WUMNN+yi4Nu3jp6nckLdH/bVGiigoJXrp0dTrAg==}
-    peerDependencies:
-      cornerstone-core: ^2.6.0
-
-  coverage-istanbul-loader@3.0.5:
-    resolution: {integrity: sha512-xsw2phF0VNqUPk47V/vHXkdcTyl0tkMSmaZfLrTOhoPhPMXFelNju7utl5s7I93KXzipqDEK0YwofQSSflPz8A==}
-    engines: {node: '>=10'}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -2234,10 +2181,6 @@ packages:
   d3-time@3.1.0:
     resolution: {integrity: sha512-VqKjzBLejbSMT4IgbmVgDjpkYrNWUYJnbCGo874u7MMKIWsILRX+OpX/gTk8MqjpT1A/c6HY2dCA77ZN0lkQ2Q==}
     engines: {node: '>=12'}
-
-  date-format@4.0.14:
-    resolution: {integrity: sha512-39BOQLs9ZjKh0/patS9nrT8wc3ioX3/eA/zgbKNopnF2wCqJEoxywwwElATYvRsXdnOxA/OQeQoFZ3rFjVajhg==}
-    engines: {node: '>=4.0'}
 
   debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
@@ -2443,10 +2386,6 @@ packages:
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  eslint-visitor-keys@2.1.0:
-    resolution: {integrity: sha512-0rSmRBzXgDzIsD6mGdJgevzgezI534Cer5L/vyMX0kHzT/jiB43jRhd9YUlMGYLQy2zprNmoT8qasCGtY+QaKw==}
-    engines: {node: '>=10'}
 
   eslint-visitor-keys@3.4.3:
     resolution: {integrity: sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==}
@@ -2679,14 +2618,6 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  istanbul-lib-coverage@3.2.2:
-    resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
-    engines: {node: '>=8'}
-
-  istanbul-lib-instrument@4.0.3:
-    resolution: {integrity: sha512-BXgQl9kf4WTCPCCpmFGoJkz/+uhvm7h7PFKUYxh7qarQd3ER33vHG//qaE8eN25l07YqZPpHXU9I09l/RD5aGQ==}
-    engines: {node: '>=8'}
-
   jest-worker@27.5.1:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
@@ -2858,9 +2789,6 @@ packages:
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
-
-  merge-source-map@1.1.0:
-    resolution: {integrity: sha512-Qkcp7P2ygktpMPh2mCQZaf3jhN6D3Z/qVZHSdWvQ+2Ef5HgRAPBO57A77+ENm0CPx2+1Ce/MYKi3ymqdfuqibw==}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -3081,9 +3009,6 @@ packages:
   regenerate@1.4.2:
     resolution: {integrity: sha512-zrceR/XhGYU/d/opr2EKO7aRHUeiBI8qjtfHqADTwZd6Szfy16la6kqD0MIUs5z5hx6AaKa+PixpPrR289+I0A==}
 
-  regenerator-runtime@0.12.1:
-    resolution: {integrity: sha512-odxIc1/vDlo4iZcfXqRYFj0vpXFNoGdKMAUieAlFYO6m/nl5e9KR/beGf41z4a1FI+aQgtjhuaSlDxQ0hmkrHg==}
-
   regenerator-runtime@0.14.1:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
@@ -3131,10 +3056,6 @@ packages:
 
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
-
-  schema-utils@2.7.1:
-    resolution: {integrity: sha512-SHiNtMOUGWBQJwzISiVYKu82GiV4QYGePp3odlY1tuKO7gPtphAT5R/py0fA6xtbgLL/RvtJZnU9b8s0F1q0Xg==}
-    engines: {node: '>= 8.9.0'}
 
   schema-utils@3.3.0:
     resolution: {integrity: sha512-pN/yOAvcC+5rQ5nERGuwrjLlYvLTbCibnZ1I7B1LaiAz9BRBlE9GMgE/eqV30P7aJQUf7Ddimy/RsbYO/GrVGg==}
@@ -3512,14 +3433,6 @@ snapshots:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-
-  '@babel/eslint-parser@7.27.5(@babel/core@7.27.3)(eslint@9.28.0(jiti@2.4.2))':
-    dependencies:
-      '@babel/core': 7.27.3
-      '@nicolo-ribaudo/eslint-scope-5-internals': 5.1.1-v1
-      eslint: 9.28.0(jiti@2.4.2)
-      eslint-visitor-keys: 2.1.0
-      semver: 6.3.1
 
   '@babel/generator@7.27.3':
     dependencies:
@@ -4125,10 +4038,6 @@ snapshots:
       '@babel/types': 7.27.3
       esutils: 2.0.3
 
-  '@babel/runtime@7.1.2':
-    dependencies:
-      regenerator-runtime: 0.12.1
-
   '@babel/runtime@7.22.11':
     dependencies:
       regenerator-runtime: 0.14.1
@@ -4365,8 +4274,6 @@ snapshots:
     dependencies:
       minipass: 7.1.2
 
-  '@istanbuljs/schema@0.1.3': {}
-
   '@jridgewell/gen-mapping@0.3.8':
     dependencies:
       '@jridgewell/set-array': 1.2.1
@@ -4388,16 +4295,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
-
-  '@jsdevtools/coverage-istanbul-loader@3.0.5':
-    dependencies:
-      convert-source-map: 1.9.0
-      istanbul-lib-instrument: 4.0.3
-      loader-utils: 2.0.4
-      merge-source-map: 1.1.0
-      schema-utils: 2.7.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@kitware/vtk.js@32.12.1(@babel/preset-env@7.27.2(@babel/core@7.27.3))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.99.9)(wslink@2.3.4)':
     dependencies:
@@ -4425,10 +4322,6 @@ snapshots:
       - webpack
 
   '@msgpack/msgpack@2.8.0': {}
-
-  '@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1':
-    dependencies:
-      eslint-scope: 5.1.1
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -5478,7 +5371,7 @@ snapshots:
 
   autoprefixer@10.4.21(postcss@8.5.3):
     dependencies:
-      browserslist: 4.24.5
+      browserslist: 4.25.0
       caniuse-lite: 1.0.30001718
       fraction.js: 4.3.7
       normalize-range: 0.1.2
@@ -5599,47 +5492,11 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  convert-source-map@1.9.0: {}
-
   convert-source-map@2.0.0: {}
 
   core-js-compat@3.43.0:
     dependencies:
       browserslist: 4.25.0
-
-  cornerstone-core@2.6.1: {}
-
-  cornerstone-math@0.1.10: {}
-
-  cornerstone-tools@6.0.10(cornerstone-core@2.6.1):
-    dependencies:
-      '@babel/runtime': 7.1.2
-      cornerstone-core: 2.6.1
-      cornerstone-math: 0.1.10
-
-  cornerstone-wado-image-loader@4.13.2(@babel/core@7.27.3)(cornerstone-core@2.6.1)(eslint@9.28.0(jiti@2.4.2)):
-    dependencies:
-      '@babel/eslint-parser': 7.27.5(@babel/core@7.27.3)(eslint@9.28.0(jiti@2.4.2))
-      '@cornerstonejs/codec-charls': 1.2.3
-      '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.2
-      '@cornerstonejs/codec-openjpeg': 1.2.4
-      '@cornerstonejs/codec-openjph': 2.4.7
-      cornerstone-core: 2.6.1
-      coverage-istanbul-loader: 3.0.5
-      date-format: 4.0.14
-      dicom-parser: 1.8.21
-      pako: 2.1.0
-      uuid: 9.0.1
-    transitivePeerDependencies:
-      - '@babel/core'
-      - eslint
-      - supports-color
-
-  coverage-istanbul-loader@3.0.5:
-    dependencies:
-      '@jsdevtools/coverage-istanbul-loader': 3.0.5
-    transitivePeerDependencies:
-      - supports-color
 
   cross-spawn@7.0.6:
     dependencies:
@@ -5676,8 +5533,6 @@ snapshots:
   d3-time@3.1.0:
     dependencies:
       d3-array: 3.2.4
-
-  date-format@4.0.14: {}
 
   debug@4.4.1:
     dependencies:
@@ -5847,8 +5702,6 @@ snapshots:
     dependencies:
       esrecurse: 4.3.0
       estraverse: 5.3.0
-
-  eslint-visitor-keys@2.1.0: {}
 
   eslint-visitor-keys@3.4.3: {}
 
@@ -6070,17 +5923,6 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  istanbul-lib-coverage@3.2.2: {}
-
-  istanbul-lib-instrument@4.0.3:
-    dependencies:
-      '@babel/core': 7.27.3
-      '@istanbuljs/schema': 0.1.3
-      istanbul-lib-coverage: 3.2.2
-      semver: 6.3.1
-    transitivePeerDependencies:
-      - supports-color
-
   jest-worker@27.5.1:
     dependencies:
       '@types/node': 22.15.23
@@ -6219,10 +6061,6 @@ snapshots:
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
-
-  merge-source-map@1.1.0:
-    dependencies:
-      source-map: 0.6.1
 
   merge-stream@2.0.0: {}
 
@@ -6404,8 +6242,6 @@ snapshots:
 
   regenerate@1.4.2: {}
 
-  regenerator-runtime@0.12.1: {}
-
   regenerator-runtime@0.14.1: {}
 
   regexpu-core@6.2.0:
@@ -6472,12 +6308,6 @@ snapshots:
   scheduler@0.23.2:
     dependencies:
       loose-envify: 1.4.0
-
-  schema-utils@2.7.1:
-    dependencies:
-      '@types/json-schema': 7.0.15
-      ajv: 6.12.6
-      ajv-keywords: 3.5.2(ajv@6.12.6)
 
   schema-utils@3.3.0:
     dependencies:
@@ -6730,7 +6560,7 @@ snapshots:
       '@webassemblyjs/wasm-edit': 1.14.1
       '@webassemblyjs/wasm-parser': 1.14.1
       acorn: 8.15.0
-      browserslist: 4.24.5
+      browserslist: 4.25.0
       chrome-trace-event: 1.0.4
       enhanced-resolve: 5.18.1
       es-module-lexer: 1.7.0
