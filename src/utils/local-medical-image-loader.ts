@@ -3,6 +3,46 @@ import { metaData, StackViewport } from "@cornerstonejs/core";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import uids from "./uids";
 import { readFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import {
+  cornerstoneNiftiImageLoader,
+  createNiftiImageIdsAndCacheMetadata,
+} from "@cornerstonejs/nifti-volume-loader";
+
+export async function loadLocalNiftiFile(filePath: string): Promise<string[]> {
+  try {
+    // Read the file using Tauri's fs API
+    const base64Content = await invoke<string>("get_file_binary", {
+      path: filePath,
+    });
+
+    // Convert base64 to binary
+    const binaryContent = atob(base64Content);
+    const bytes = new Uint8Array(binaryContent.length);
+    for (let i = 0; i < binaryContent.length; i++) {
+      bytes[i] = binaryContent.charCodeAt(i);
+    }
+
+    // Create a blob URL for the file
+    const blob = new Blob([bytes]);
+
+    // Setup a local url for the file
+    const url = URL.createObjectURL(blob);
+
+    const niftiURL =
+      "https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz";
+
+    const imageIds = await createNiftiImageIdsAndCacheMetadata({
+      url,
+    });
+
+    console.log("imageIds", imageIds);
+
+    return imageIds;
+  } catch (error) {
+    console.error("Error loading local NIFTI file:", error);
+    throw error;
+  }
+}
 
 export async function loadLocalDicomFile(filePath: string): Promise<string> {
   try {

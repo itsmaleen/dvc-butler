@@ -5,15 +5,19 @@ import {
   Enums,
   init as coreInit,
   StackViewport,
+  imageLoader,
 } from "@cornerstonejs/core";
-import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
+import {
+  cornerstoneNiftiImageLoader,
+  init as niftiImageLoaderInit,
+} from "@cornerstonejs/nifti-volume-loader";
 import {
   convertMultiframeImageIds,
-  loadLocalDicomFile,
+  loadLocalNiftiFile,
   prefetchMetadataInformation,
 } from "../../utils/local-medical-image-loader";
 
-export const Route = createFileRoute("/(dashboard)/dicom-viewer")({
+export const Route = createFileRoute("/(dashboard)/nifti-viewer")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
       path: search.path as string,
@@ -34,7 +38,7 @@ function RouteComponent() {
     async function initializeCornerstone() {
       try {
         await coreInit();
-        await dicomImageLoaderInit();
+        await niftiImageLoaderInit();
         setIsInitialized(true);
       } catch (error) {
         console.error("Error initializing Cornerstone:", error);
@@ -54,7 +58,7 @@ function RouteComponent() {
     };
   }, []);
 
-  // Handle DICOM loading
+  // Handle NIFTI loading
   useEffect(() => {
     if (!path || !viewerRef.current || !isInitialized) return;
 
@@ -62,7 +66,7 @@ function RouteComponent() {
     element.style.width = "100%";
     element.style.height = "600px";
 
-    async function loadDicom() {
+    async function loadNifti() {
       try {
         setError(null);
 
@@ -86,32 +90,35 @@ function RouteComponent() {
           viewportId
         ) as StackViewport;
 
-        // Load and render the DICOM
-        const imageId = await loadLocalDicomFile(path);
-        await prefetchMetadataInformation([imageId]);
-        const stack = convertMultiframeImageIds([imageId]);
+        // Load and render the NIFTI
+        const imageIds = await loadLocalNiftiFile(path);
+        // await prefetchMetadataInformation(imageIds);
+        const stack = convertMultiframeImageIds(imageIds);
+        // register the image loader for nifti files
+        // @ts-ignore
+        imageLoader.registerImageLoader("nifti", cornerstoneNiftiImageLoader);
 
         await viewport.setStack(stack);
         viewport.resize();
         viewport.render();
       } catch (error) {
-        console.error("Error loading DICOM:", error);
+        console.error("Error loading NIFTI:", error);
         setError(
-          error instanceof Error ? error.message : "Failed to load DICOM file"
+          error instanceof Error ? error.message : "Failed to load NIFTI file"
         );
       }
     }
 
-    loadDicom();
+    loadNifti();
   }, [path, isInitialized]);
 
   if (!path) {
-    return <div>No DICOM file selected</div>;
+    return <div>No NIFTI file selected</div>;
   }
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">DICOM Viewer</h1>
+      <h1 className="text-2xl font-bold mb-4">NIFTI Viewer</h1>
       <p className="text-muted-foreground mb-4">Viewing file: {path}</p>
       {error ? (
         <div className="text-red-500 mb-4">{error}</div>

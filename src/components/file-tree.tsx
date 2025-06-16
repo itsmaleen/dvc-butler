@@ -158,7 +158,11 @@ export function FileTree({
     const isSelected = selectedPaths.has(fullPath);
     const isDicomFile =
       !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
-    // DVC tracked icon
+
+    const isNiftiFile =
+      !node.is_directory &&
+      (node.name.toLowerCase().endsWith(".nii") ||
+        node.name.toLowerCase().endsWith(".nii.gz"));
 
     const node_status =
       dvcStagedFiles.find((file) => file.path === node.name)?.status ||
@@ -221,6 +225,14 @@ export function FileTree({
               {isDicomFile ? (
                 <Link
                   to="/dicom-viewer"
+                  search={{ path: fullPath }}
+                  className="text-blue-500 hover:underline"
+                >
+                  {node.name}
+                </Link>
+              ) : isNiftiFile ? (
+                <Link
+                  to="/nifti-viewer"
                   search={{ path: fullPath }}
                   className="text-blue-500 hover:underline"
                 >

@@ -159,9 +159,9 @@ export async function getCurrentProject() {
   }
 
   const currentProject = await db
-    .select<
-      CurrentProject[]
-    >("SELECT * FROM current_project ORDER BY created_at DESC LIMIT 1")
+    .select<CurrentProject[]>(
+      "SELECT * FROM current_project ORDER BY created_at DESC LIMIT 1"
+    )
     .catch((error) => {
       console.error(error);
       return [];
@@ -225,8 +225,6 @@ export async function getLocalPath(projectId: number) {
       [projectId]
     )
     .then((data) => {
-      console.log("local path");
-      console.log(data);
       if (data.length > 0) {
         return data[0].file_path;
       }

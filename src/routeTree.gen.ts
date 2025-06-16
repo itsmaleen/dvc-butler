@@ -18,6 +18,7 @@ import { Route as dashboardIndexImport } from './routes/(dashboard)/index'
 import { Route as SettingsRemoteStorageImport } from './routes/settings/remote-storage'
 import { Route as SettingsLocalDataImport } from './routes/settings/local-data'
 import { Route as SettingsGitConfigImport } from './routes/settings/git-config'
+import { Route as dashboardNiftiViewerImport } from './routes/(dashboard)/nifti-viewer'
 import { Route as dashboardDicomViewerImport } from './routes/(dashboard)/dicom-viewer'
 
 // Create/Update Routes
@@ -63,6 +64,12 @@ const SettingsGitConfigRoute = SettingsGitConfigImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const dashboardNiftiViewerRoute = dashboardNiftiViewerImport.update({
+  id: '/nifti-viewer',
+  path: '/nifti-viewer',
+  getParentRoute: () => dashboardRouteRoute,
+} as any)
+
 const dashboardDicomViewerRoute = dashboardDicomViewerImport.update({
   id: '/dicom-viewer',
   path: '/dicom-viewer',
@@ -92,6 +99,13 @@ declare module '@tanstack/react-router' {
       path: '/dicom-viewer'
       fullPath: '/dicom-viewer'
       preLoaderRoute: typeof dashboardDicomViewerImport
+      parentRoute: typeof dashboardRouteImport
+    }
+    '/(dashboard)/nifti-viewer': {
+      id: '/(dashboard)/nifti-viewer'
+      path: '/nifti-viewer'
+      fullPath: '/nifti-viewer'
+      preLoaderRoute: typeof dashboardNiftiViewerImport
       parentRoute: typeof dashboardRouteImport
     }
     '/settings/git-config': {
@@ -136,11 +150,13 @@ declare module '@tanstack/react-router' {
 
 interface dashboardRouteRouteChildren {
   dashboardDicomViewerRoute: typeof dashboardDicomViewerRoute
+  dashboardNiftiViewerRoute: typeof dashboardNiftiViewerRoute
   dashboardIndexRoute: typeof dashboardIndexRoute
 }
 
 const dashboardRouteRouteChildren: dashboardRouteRouteChildren = {
   dashboardDicomViewerRoute: dashboardDicomViewerRoute,
+  dashboardNiftiViewerRoute: dashboardNiftiViewerRoute,
   dashboardIndexRoute: dashboardIndexRoute,
 }
 
@@ -152,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/': typeof dashboardIndexRoute
   '/onboarding': typeof OnboardingRoute
   '/dicom-viewer': typeof dashboardDicomViewerRoute
+  '/nifti-viewer': typeof dashboardNiftiViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
@@ -161,6 +178,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/dicom-viewer': typeof dashboardDicomViewerRoute
+  '/nifti-viewer': typeof dashboardNiftiViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
@@ -173,6 +191,7 @@ export interface FileRoutesById {
   '/(dashboard)': typeof dashboardRouteRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/(dashboard)/dicom-viewer': typeof dashboardDicomViewerRoute
+  '/(dashboard)/nifti-viewer': typeof dashboardNiftiViewerRoute
   '/settings/git-config': typeof SettingsGitConfigRoute
   '/settings/local-data': typeof SettingsLocalDataRoute
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
@@ -186,6 +205,7 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/dicom-viewer'
+    | '/nifti-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
@@ -194,6 +214,7 @@ export interface FileRouteTypes {
   to:
     | '/onboarding'
     | '/dicom-viewer'
+    | '/nifti-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
@@ -204,6 +225,7 @@ export interface FileRouteTypes {
     | '/(dashboard)'
     | '/onboarding'
     | '/(dashboard)/dicom-viewer'
+    | '/(dashboard)/nifti-viewer'
     | '/settings/git-config'
     | '/settings/local-data'
     | '/settings/remote-storage'
@@ -252,6 +274,7 @@ export const routeTree = rootRoute
       "filePath": "(dashboard)/route.tsx",
       "children": [
         "/(dashboard)/dicom-viewer",
+        "/(dashboard)/nifti-viewer",
         "/(dashboard)/"
       ]
     },
@@ -260,6 +283,10 @@ export const routeTree = rootRoute
     },
     "/(dashboard)/dicom-viewer": {
       "filePath": "(dashboard)/dicom-viewer.tsx",
+      "parent": "/(dashboard)"
+    },
+    "/(dashboard)/nifti-viewer": {
+      "filePath": "(dashboard)/nifti-viewer.tsx",
       "parent": "/(dashboard)"
     },
     "/settings/git-config": {
