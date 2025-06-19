@@ -1,5 +1,6 @@
-use crate::git::StagedFile;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::path::Path;
 use std::process::Command;
 use tauri::command;
 
@@ -78,8 +79,7 @@ pub fn add_dvc_file(path: &str, file: &str) -> Result<String, String> {
     ))
 }
 
-#[command]
-pub fn dvc_diff(path: &str) -> Result<Vec<StagedFile>, String> {
+pub fn dvc_diff(path: &Path) -> Result<HashMap<String, String>, String> {
     let output = Command::new("dvc")
         .arg("diff")
         .arg("--json")
@@ -95,7 +95,7 @@ pub fn dvc_diff(path: &str) -> Result<Vec<StagedFile>, String> {
     let json: Value = serde_json::from_str(&stdout)
         .map_err(|e| format!("Failed to parse dvc diff JSON: {}", e))?;
 
-    let mut files = Vec::new();
+    let mut status_map = HashMap::new();
     let categories = [
         ("added", "added"),
         ("deleted", "deleted"),
@@ -104,27 +104,24 @@ pub fn dvc_diff(path: &str) -> Result<Vec<StagedFile>, String> {
         ("not in cache", "not in cache"),
     ];
 
+    // Helper function to normalize paths
+    let normalize_path = |p: &str| -> String { Path::new(p).to_string_lossy().replace('\\', "/") };
+
     for (cat_key, status) in &categories {
         if let Some(arr) = json.get(*cat_key).and_then(|v| v.as_array()) {
             for entry in arr {
                 // For 'renamed', DVC gives objects with 'path' and 'path_old'. For others, just 'path'.
                 if *cat_key == "renamed" {
                     if let Some(path) = entry.get("path").and_then(|v| v.as_str()) {
-                        files.push(StagedFile {
-                            path: path.to_string(),
-                            status: status.to_string(),
-                        });
+                        status_map.insert(normalize_path(path), status.to_string());
                     }
                 } else {
                     if let Some(path) = entry.get("path").and_then(|v| v.as_str()) {
-                        files.push(StagedFile {
-                            path: path.to_string(),
-                            status: status.to_string(),
-                        });
+                        status_map.insert(normalize_path(path), status.to_string());
                     }
                 }
             }
         }
     }
-    Ok(files)
+    Ok(status_map)
 }

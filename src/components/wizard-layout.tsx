@@ -13,6 +13,7 @@ interface WizardLayoutProps {
   isNextDisabled?: boolean;
   isPreviousDisabled?: boolean;
   isLastStep?: boolean;
+  completeButtonContent?: React.ReactNode;
 }
 
 export default function WizardLayout({
@@ -25,6 +26,7 @@ export default function WizardLayout({
   isNextDisabled = false,
   isPreviousDisabled = false,
   isLastStep = false,
+  completeButtonContent = "Complete Setup",
 }: WizardLayoutProps) {
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -44,7 +46,7 @@ export default function WizardLayout({
           <div className="flex gap-2">
             {isLastStep ? (
               <Button onClick={onComplete} disabled={isNextDisabled}>
-                Complete Setup
+                {completeButtonContent}
               </Button>
             ) : (
               <Button onClick={onNext} disabled={isNextDisabled}>

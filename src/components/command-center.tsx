@@ -1,20 +1,23 @@
 // import { XIcon } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { EventCategory, startTiming, endTiming } from "@/lib/analytics";
+import { Loader2 } from "lucide-react";
 
 interface CommandCenterProps {
   selectedFiles: string[];
-  onAction: (action: string) => void;
+  onAction: (action: string) => Promise<void>;
 }
 
 export const CommandCenter: React.FC<CommandCenterProps> = ({
   selectedFiles,
   onAction,
 }) => {
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
   if (selectedFiles.length === 0) return null;
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     const timingId = startTiming(
       EventCategory.ACTION,
       `command_center_${action}`,
@@ -25,8 +28,10 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
     );
 
     try {
-      onAction(action);
+      setLoadingAction(action);
+      await onAction(action);
     } finally {
+      setLoadingAction(null);
       endTiming(timingId);
     }
   };
@@ -64,16 +69,32 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
           type="button"
           variant="outline"
           onClick={() => handleAction("add")}
+          disabled={loadingAction === "add"}
         >
-          Add
+          {loadingAction === "add" ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding...
+            </>
+          ) : (
+            "Add"
+          )}
         </Button>
-        <Button
+        {/* <Button
           type="button"
           variant="outline"
           onClick={() => handleAction("checkout")}
+          disabled={loadingAction === "checkout"}
         >
-          Checkout
-        </Button>
+          {loadingAction === "checkout" ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Checking out...
+            </>
+          ) : (
+            "Checkout"
+          )}
+        </Button> */}
         {/* Add more actions as needed */}
       </div>
     </div>

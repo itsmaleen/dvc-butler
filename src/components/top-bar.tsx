@@ -40,9 +40,11 @@ import { toast } from "sonner";
 
 export function TopBar({
   repoPath,
+  stagedFiles,
   onPush,
 }: {
   repoPath: string;
+  stagedFiles: string[];
   onPush: () => void;
 }) {
   const [branch, setBranch] = useState<string>("");
@@ -90,15 +92,6 @@ export function TopBar({
   }, [branchDialogOpen, branching, repoPath]);
 
   // --- GIT STATUS LOGIC ---
-  const [stagedFiles, setStagedFiles] = useState<
-    { path: string; status: string }[]
-  >([]);
-
-  useEffect(() => {
-    invoke<{ path: string; status: string }[]>("git_status", { repoPath })
-      .then(setStagedFiles)
-      .catch(() => setStagedFiles([]));
-  }, [repoPath]);
 
   const canPush = stagedFiles.length > 0;
 

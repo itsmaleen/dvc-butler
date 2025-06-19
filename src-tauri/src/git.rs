@@ -28,7 +28,7 @@ pub fn git_status(repo_path: String) -> Result<Vec<StagedFile>, String> {
         // Porcelain format: XY <SP>+ path (or paths for rename/copy)
         if line.len() >= 3 {
             let status = &line[0..2];
-            let path = line[3..].trim_start();
+            let path = line[3..].trim_start().trim_matches('"');
             if status != "??" {
                 files.push(StagedFile {
                     path: path.to_string(),

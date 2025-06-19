@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 
 export const Route = createFileRoute("/onboarding")({
@@ -51,6 +51,8 @@ function RouteComponent() {
       accessKey: "",
       secretKey: "",
     });
+
+  const [isCreating, setIsCreating] = useState(false);
 
   const steps = [
     "Project Info",
@@ -136,32 +138,44 @@ function RouteComponent() {
   };
 
   const handleComplete = async () => {
-    await createProject(
-      projectInfo,
-      dvcConfig,
-      localDataConfig,
-      remoteStorageConfig
-    )
-      .then(async () => {
-        const result = await invoke("init_dvc_project", {
-          path: localDataConfig.folderPath,
-        });
-        console.log("result");
-        console.log(result);
+    setIsCreating(true);
+    const toastId = toast.loading("Creating project...", {
+      description: "Setting up your project configuration",
+    });
 
-        toast("Project created successfully", {
-          description: `Project ${projectInfo.name} has been created`,
-        });
-      })
-      .then(() => {
-        navigate({ to: "/", search: { path: localDataConfig.folderPath } });
-      })
-      .catch((error) => {
-        console.error(error);
-        toast("Error creating project", {
-          description: error,
-        });
+    try {
+      await createProject(
+        projectInfo,
+        dvcConfig,
+        localDataConfig,
+        remoteStorageConfig
+      );
+
+      toast.loading("Initializing DVC...", {
+        id: toastId,
+        description: "Setting up DVC in your project directory",
       });
+
+      await invoke("init_dvc_project", {
+        path: localDataConfig.folderPath,
+      });
+
+      toast.success("Project created successfully", {
+        id: toastId,
+        description: `Project ${projectInfo.name} has been created and initialized`,
+      });
+
+      navigate({ to: "/", search: { path: localDataConfig.folderPath } });
+    } catch (error) {
+      console.error(error);
+      toast.error("Error creating project", {
+        id: toastId,
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleEditStep = (step: number) => {
@@ -205,6 +219,7 @@ function RouteComponent() {
           <button
             onClick={() => router.history.back()}
             className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            disabled={isCreating}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -217,8 +232,18 @@ function RouteComponent() {
         onNext={handleNext}
         onPrevious={handlePrevious}
         onComplete={handleComplete}
-        isNextDisabled={isNextDisabled()}
+        isNextDisabled={isNextDisabled() || isCreating}
         isLastStep={currentStep === steps.length - 1}
+        completeButtonContent={
+          isCreating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating Project...
+            </>
+          ) : (
+            "Create Project"
+          )
+        }
       >
         {currentStep === 0 && (
           <ProjectInfoStep
