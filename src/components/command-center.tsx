@@ -1,6 +1,7 @@
 // import { XIcon } from "lucide-react";
 import React from "react";
 import { Button } from "./ui/button";
+import { EventCategory, startTiming, endTiming } from "@/lib/analytics";
 
 interface CommandCenterProps {
   selectedFiles: string[];
@@ -12,6 +13,23 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
   onAction,
 }) => {
   if (selectedFiles.length === 0) return null;
+
+  const handleAction = (action: string) => {
+    const timingId = startTiming(
+      EventCategory.ACTION,
+      `command_center_${action}`,
+      {
+        action,
+        fileCount: selectedFiles.length,
+      }
+    );
+
+    try {
+      onAction(action);
+    } finally {
+      endTiming(timingId);
+    }
+  };
 
   return (
     <div
@@ -42,13 +60,17 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             <XIcon className="w-4 h-4" />
           </button> */}
         </div>
-        <Button type="button" variant="outline" onClick={() => onAction("add")}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleAction("add")}
+        >
           Add
         </Button>
         <Button
           type="button"
           variant="outline"
-          onClick={() => onAction("checkout")}
+          onClick={() => handleAction("checkout")}
         >
           Checkout
         </Button>

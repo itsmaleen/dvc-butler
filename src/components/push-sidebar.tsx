@@ -11,6 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import * as React from "react";
 import { invoke } from "@tauri-apps/api/core";
+import {
+  EventCategory,
+  startTiming,
+  endTiming,
+  trackError,
+  trackEvent,
+} from "@/lib/analytics";
 
 export function PushSidebar({
   open,
@@ -31,6 +38,13 @@ export function PushSidebar({
   const canPush = summary.trim().length > 0;
 
   const handleCommitAndPush = async () => {
+    const timingId = startTiming(EventCategory.ACTION, "git_commit_and_push", {
+      repoPath,
+      fileCount: stagedFiles.length,
+      hasSummary: Boolean(summary.trim()),
+      hasDescription: Boolean(description.trim()),
+    });
+
     setError(null);
     setLoading(true);
     try {
@@ -44,11 +58,28 @@ export function PushSidebar({
       onOpenChange(false);
     } catch (err: any) {
       console.error(err);
-      setError(err?.toString() || "Unknown error");
+      const errorMessage = err?.toString() || "Unknown error";
+      setError(errorMessage);
+      trackError(new Error(errorMessage), {
+        operation: "git_commit_and_push",
+        repoPath,
+        fileCount: stagedFiles.length,
+      });
     } finally {
       setLoading(false);
+      endTiming(timingId);
     }
   };
+
+  // Track when the push sidebar is opened
+  React.useEffect(() => {
+    if (open) {
+      trackEvent("push_sidebar_opened", {
+        fileCount: stagedFiles.length,
+        repoPath,
+      });
+    }
+  }, [open, stagedFiles.length, repoPath]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
