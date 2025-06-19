@@ -10,15 +10,24 @@ Before you begin, make sure you have all the required dependencies for Tauri dev
 
 - [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
 
-### 2. Install Project Dependencies
+### 2. Install Rust Dependencies
 
-After installing the prerequisites, install the project dependencies using [pnpm](https://pnpm.io/):
+After installing the prerequisites, install any required Rust dependencies (if your project specifies any). For example, to install a Rust CLI tool globally, you can use:
+
+```sh
+cd src-tauri
+cargo install --path .
+```
+
+### 3. Install Project Dependencies
+
+After installing the prerequisites and Rust dependencies, install the project dependencies using [pnpm](https://pnpm.io/):
 
 ```sh
 pnpm install
 ```
 
-### 3. Start the Development Server
+### 4. Start the Development Server
 
 To start the Tauri development environment, run:
 
