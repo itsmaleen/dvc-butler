@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
+import { EventCategory, startTiming, endTiming } from "@/lib/analytics";
 
 interface FileNode {
   name: string;
@@ -43,17 +44,23 @@ export function FileTree({
   // Load selected files from state on mount
   useEffect(() => {
     const loadSelectedFiles = async () => {
+      const timingId = startTiming(EventCategory.ACTION, "load_selected_files");
       try {
         const files = await invoke<string[]>("get_selected_files");
         setSelectedPaths(new Set(files));
       } catch (error) {
         console.error("Error loading selected files:", error);
+      } finally {
+        endTiming(timingId);
       }
     };
     loadSelectedFiles();
   }, []);
 
   const loadTree = async () => {
+    const timingId = startTiming(EventCategory.ACTION, "load_file_tree", {
+      path: initialPath,
+    });
     try {
       const result = await invoke<FileNode>("get_file_tree_structure", {
         path: initialPath,
@@ -61,6 +68,8 @@ export function FileTree({
       setTree(result);
     } catch (error) {
       console.error("Error loading file tree:", error);
+    } finally {
+      endTiming(timingId);
     }
   };
 
@@ -70,6 +79,9 @@ export function FileTree({
   }, []);
 
   const toggleFolder = (path: string) => {
+    const timingId = startTiming(EventCategory.ACTION, "toggle_folder", {
+      path,
+    });
     setExpandedFolders((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
@@ -77,11 +89,17 @@ export function FileTree({
       } else {
         next.add(path);
       }
+      endTiming(timingId);
       return next;
     });
   };
 
   const toggleSelection = async (path: string) => {
+    const timingId = startTiming(
+      EventCategory.ACTION,
+      "toggle_file_selection",
+      { path }
+    );
     try {
       if (selectedPaths.has(path)) {
         await invoke("remove_selected_file", { path });
@@ -102,6 +120,8 @@ export function FileTree({
       }
     } catch (error) {
       console.error("Error toggling file selection:", error);
+    } finally {
+      endTiming(timingId);
     }
   };
 

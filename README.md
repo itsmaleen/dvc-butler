@@ -27,7 +27,20 @@ After installing the prerequisites and Rust dependencies, install the project de
 pnpm install
 ```
 
-### 4. Start the Development Server
+### 4. Configure Analytics (Optional)
+
+The application uses PostHog for product analytics to track performance and usage patterns. To enable analytics:
+
+1. Create a `.env` file in the root directory
+2. Add the following environment variables:
+```env
+VITE_PUBLIC_POSTHOG_KEY=your_project_api_key
+VITE_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+```
+
+Replace `your_project_api_key` with your actual PostHog project API key. If you're using a self-hosted PostHog instance, update the host URL accordingly.
+
+### 5. Start the Development Server
 
 To start the Tauri development environment, run:
 
