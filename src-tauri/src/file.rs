@@ -1,8 +1,9 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::State;
 
 use crate::state::SelectedFilesState;
@@ -17,77 +18,73 @@ pub struct FileNode {
     git_status: String,
 }
 
-fn get_git_status_for_path(path: &Path) -> String {
+fn get_repo_git_status(path: &Path) -> Result<(PathBuf, HashMap<String, String>), String> {
     // Find the git repository root
     let repo_root_output = std::process::Command::new("git")
         .arg("rev-parse")
         .arg("--show-toplevel")
-        .current_dir(path.parent().unwrap_or_else(|| Path::new(".")))
-        .output();
-    let repo_root = if let Ok(output) = repo_root_output {
-        if output.status.success() {
-            let root = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !root.is_empty() {
-                Some(std::path::PathBuf::from(root))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+        .current_dir(path)
+        .output()
+        .map_err(|e| format!("Failed to find git repository: {}", e))?;
 
-    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    if !repo_root_output.status.success() {
+        return Err("Not a git repository".to_string());
+    }
+
+    let repo_root = String::from_utf8_lossy(&repo_root_output.stdout)
+        .trim()
+        .to_string();
+    if repo_root.is_empty() {
+        return Err("Invalid git repository root".to_string());
+    }
+
+    let repo_root_path = PathBuf::from(repo_root);
+
+    // Get git status for the entire repository
     let output = std::process::Command::new("git")
         .arg("status")
         .arg("--porcelain")
-        .current_dir(parent)
-        .output();
-    if let Ok(output) = output {
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            // Compute the relative path from the repo root
-            let rel_path = if let Some(repo_root) = &repo_root {
-                path.strip_prefix(repo_root)
-                    .map(|p| p.to_string_lossy().replace('\\', "/"))
-                    .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"))
-            } else {
-                path.to_string_lossy().replace('\\', "/")
-            };
-            for line in stdout.lines() {
-                let trimmed = line.trim();
-                if trimmed.len() < 3 {
-                    continue;
-                }
-                let x = trimmed.chars().nth(0).unwrap();
-                let y = trimmed.chars().nth(1).unwrap();
-                let file_path = trimmed.chars().skip(3).collect::<String>();
-                // Compare using the relative path
-                if file_path == rel_path {
-                    return match (x, y) {
-                        ('?', '?') => "untracked",
-                        ('A', _) | (_, 'A') => "added",
-                        ('M', _) | (_, 'M') => "modified",
-                        ('D', _) | (_, 'D') => "deleted",
-                        (' ', ' ') => "committed",
-                        _ => "other",
-                    }
-                    .to_string();
-                }
-            }
-            // If not found, treat as committed (clean)
-            "committed".to_string()
-        } else {
-            "error".to_string()
-        }
-    } else {
-        "error".to_string()
+        .current_dir(&repo_root_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git status: {}", e))?;
+
+    if !output.status.success() {
+        return Err("Git status command failed".to_string());
     }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut status_map = HashMap::new();
+
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if trimmed.len() < 3 {
+            continue;
+        }
+        let x = trimmed.chars().nth(0).unwrap();
+        let y = trimmed.chars().nth(1).unwrap();
+        let file_path = trimmed.chars().skip(3).collect::<String>();
+
+        let status = match (x, y) {
+            ('?', '?') => "untracked",
+            ('A', _) | (_, 'A') => "added",
+            ('M', _) | (_, 'M') => "modified",
+            ('D', _) | (_, 'D') => "deleted",
+            (' ', ' ') => "committed",
+            _ => "other",
+        }
+        .to_string();
+
+        status_map.insert(file_path, status);
+    }
+
+    Ok((repo_root_path, status_map))
 }
 
-fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
+fn get_file_tree(
+    path: &Path,
+    repo_root: &Path,
+    git_status_map: &HashMap<String, String>,
+) -> std::io::Result<FileNode> {
     let metadata = fs::metadata(path)?;
     let name = path
         .file_name()
@@ -116,7 +113,14 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
         }
     };
 
-    // Determine which file to check git status for
+    // Get relative path from repo root for git status lookup
+    let get_relative_path = |p: &Path| -> String {
+        p.strip_prefix(repo_root)
+            .map(|p| p.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|_| p.to_string_lossy().replace('\\', "/"))
+    };
+
+    // Get git status from the map
     let git_status = if has_dvc_file {
         if path.is_file() {
             let mut dvc_file = path.to_path_buf();
@@ -127,19 +131,28 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
                     .unwrap_or_default(),
                 ".dvc"
             ));
-            get_git_status_for_path(&dvc_file)
+            git_status_map
+                .get(&get_relative_path(&dvc_file))
+                .cloned()
+                .unwrap_or_else(|| "committed".to_string())
         } else {
             let dvc_file = path.to_path_buf();
             if let Some(parent) = dvc_file.parent() {
                 let dvc_name = format!("{}.dvc", name);
                 let dvc_path = parent.join(dvc_name);
-                get_git_status_for_path(&dvc_path)
+                git_status_map
+                    .get(&get_relative_path(&dvc_path))
+                    .cloned()
+                    .unwrap_or_else(|| "committed".to_string())
             } else {
                 "error".to_string()
             }
         }
     } else {
-        get_git_status_for_path(path)
+        git_status_map
+            .get(&get_relative_path(path))
+            .cloned()
+            .unwrap_or_else(|| "committed".to_string())
     };
 
     if metadata.is_dir() {
@@ -159,7 +172,7 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
             if entry_metadata.file_type().is_symlink() {
                 continue;
             }
-            let child = get_file_tree(&entry_path)?;
+            let child = get_file_tree(&entry_path, repo_root, git_status_map)?;
             children.push(child);
         }
         Ok(FileNode {
@@ -184,7 +197,9 @@ fn get_file_tree(path: &Path) -> std::io::Result<FileNode> {
 
 #[tauri::command]
 pub fn get_file_tree_structure(path: &str) -> Result<FileNode, String> {
-    get_file_tree(Path::new(path)).map_err(|e| e.to_string())
+    let path = Path::new(path);
+    let (repo_root, git_status_map) = get_repo_git_status(path)?;
+    get_file_tree(path, &repo_root, &git_status_map).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
