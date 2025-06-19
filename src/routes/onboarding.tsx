@@ -154,7 +154,7 @@ function RouteComponent() {
         });
       })
       .then(() => {
-        navigate({ to: "/" });
+        navigate({ to: "/", search: { path: localDataConfig.folderPath } });
       })
       .catch((error) => {
         console.error(error);

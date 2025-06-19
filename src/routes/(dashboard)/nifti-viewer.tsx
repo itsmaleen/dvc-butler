@@ -14,7 +14,6 @@ import {
 import {
   convertMultiframeImageIds,
   loadLocalNiftiFile,
-  prefetchMetadataInformation,
 } from "../../utils/local-medical-image-loader";
 
 export const Route = createFileRoute("/(dashboard)/nifti-viewer")({

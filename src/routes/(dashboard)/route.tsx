@@ -4,20 +4,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  getCurrentProject,
-  getProjects,
-  setCurrentProject,
-  getLocalPath,
-} from "@/lib/db";
+import { getCurrentProject, getProjects, setCurrentProject } from "@/lib/db";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GalleryVerticalEnd } from "lucide-react";
-import {
-  createRootRoute,
-  Outlet,
-  useNavigate,
-  useRouter,
-} from "@tanstack/react-router";
+import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -46,7 +36,6 @@ function DashboardRootComponent() {
     isPending,
     error,
     data: projects,
-    isFetching,
   } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
