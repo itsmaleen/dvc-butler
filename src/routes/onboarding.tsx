@@ -1,17 +1,32 @@
-"use client";
-
-import { useState } from "react";
-import { toast } from "sonner";
-import WizardLayout from "@/components/wizard-layout";
-import ProjectInfoStep, { ProjectInfo } from "@/components/project-info-step";
 import InitializeDvcStep, { DvcConfig } from "@/components/initialize-dvc-step";
 import LocalDataStep, { LocalDataConfig } from "@/components/local-data-step";
+import ProjectInfoStep, { ProjectInfo } from "@/components/project-info-step";
 import RemoteStorageStep, {
   RemoteStorageConfig,
 } from "@/components/remote-storage-step";
 import ReviewStep from "@/components/review-step";
+import WizardLayout from "@/components/wizard-layout";
+import { createProject } from "@/lib/db";
+import {
+  createFileRoute,
+  useNavigate,
+  useCanGoBack,
+  useRouter,
+} from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
-export default function OnboardingPage() {
+export const Route = createFileRoute("/onboarding")({
+  component: RouteComponent,
+});
+
+function RouteComponent() {
+  const router = useRouter();
+  const navigate = useNavigate({ from: "/onboarding" });
+  const canGoBack = useCanGoBack();
+
   const [currentStep, setCurrentStep] = useState(0);
 
   // State for each step
@@ -120,13 +135,33 @@ export default function OnboardingPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleComplete = () => {
-    // Here you would typically save all the configuration and create the project
-    toast("Project created successfully", {
-      description: `Project ${projectInfo.name} has been created`,
-    });
+  const handleComplete = async () => {
+    await createProject(
+      projectInfo,
+      dvcConfig,
+      localDataConfig,
+      remoteStorageConfig
+    )
+      .then(async () => {
+        const result = await invoke("init_dvc_project", {
+          path: localDataConfig.folderPath,
+        });
+        console.log("result");
+        console.log(result);
 
-    // TODO: Navigate to the dashboard or the new project
+        toast("Project created successfully", {
+          description: `Project ${projectInfo.name} has been created`,
+        });
+      })
+      .then(() => {
+        navigate({ to: "/", search: { path: localDataConfig.folderPath } });
+      })
+      .catch((error) => {
+        console.error(error);
+        toast("Error creating project", {
+          description: error,
+        });
+      });
   };
 
   const handleEditStep = (step: number) => {
@@ -165,6 +200,17 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-background py-8">
+      {canGoBack && (
+        <div className="container mx-auto px-4 mb-4">
+          <button
+            onClick={() => router.history.back()}
+            className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </button>
+        </div>
+      )}
       <WizardLayout
         steps={steps}
         currentStep={currentStep}

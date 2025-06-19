@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, FolderIcon, PlusIcon } from "lucide-react";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -56,16 +57,28 @@ export default function LocalDataStep({
     onLocalDataConfigChange({ ...localDataConfig, folderPath: value });
   };
 
-  const handleBrowseClick = () => {
-    // In a real implementation, this would open a folder picker dialog
-    // For now, we'll just simulate it with a sample path
-    const samplePath =
-      localDataConfig.folderType === "existing"
-        ? "/Users/username/Documents/dicom-data"
-        : "/Users/username/Documents/new-dicom-folder";
+  const handleBrowseClick = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title:
+          localDataConfig.folderType === "existing"
+            ? "Select Existing DICOM Folder"
+            : "Select Location for New DICOM Folder",
+      });
 
-    onLocalDataConfigChange({ ...localDataConfig, folderPath: samplePath });
-    setPathError(null);
+      if (selected) {
+        onLocalDataConfigChange({
+          ...localDataConfig,
+          folderPath: selected as string,
+        });
+        setPathError(null);
+      }
+    } catch (error) {
+      console.error("Error selecting folder:", error);
+      setPathError("Failed to select folder");
+    }
   };
 
   return (
