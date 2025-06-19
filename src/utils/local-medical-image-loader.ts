@@ -2,11 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { metaData, StackViewport } from "@cornerstonejs/core";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import uids from "./uids";
-import { readFile, BaseDirectory } from "@tauri-apps/plugin-fs";
-import {
-  cornerstoneNiftiImageLoader,
-  createNiftiImageIdsAndCacheMetadata,
-} from "@cornerstonejs/nifti-volume-loader";
+import { createNiftiImageIdsAndCacheMetadata } from "@cornerstonejs/nifti-volume-loader";
 
 export async function loadLocalNiftiFile(filePath: string): Promise<string[]> {
   try {
@@ -28,8 +24,8 @@ export async function loadLocalNiftiFile(filePath: string): Promise<string[]> {
     // Setup a local url for the file
     const url = URL.createObjectURL(blob);
 
-    const niftiURL =
-      "https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz";
+    // const niftiURL =
+    //   "https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz";
 
     const imageIds = await createNiftiImageIdsAndCacheMetadata({
       url,
@@ -229,17 +225,4 @@ export async function loadAndViewImage(
       }
     }
   });
-}
-
-async function getFileContent(filePath: string) {
-  // Read the file using Tauri's fs API
-  const relativePath = await invoke<string>("get_relative_path", {
-    absolutePath: filePath,
-  });
-  console.log("relativePath", relativePath);
-
-  const fileContent = await readFile(relativePath, {
-    baseDir: BaseDirectory.Home,
-  });
-  return fileContent;
 }

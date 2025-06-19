@@ -5,11 +5,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import { viteCommonjs } from "@originjs/vite-plugin-commonjs";
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   assetsInclude: ["**/*.wasm"],
 
   plugins: [
@@ -33,6 +32,9 @@ export default defineConfig(async () => ({
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
+  worker: {
+    format: "es",
+  },
   // 1. prevent vite from obscuring rust errors
   clearScreen: false,
   // 2. tauri expects a fixed port, fail if that port is not available
@@ -52,4 +54,4 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-}));
+});
