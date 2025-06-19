@@ -134,7 +134,7 @@ fn get_file_tree(
             git_status_map
                 .get(&get_relative_path(&dvc_file))
                 .cloned()
-                .unwrap_or_else(|| "committed".to_string())
+                .unwrap_or_else(|| "untracked".to_string())
         } else {
             let dvc_file = path.to_path_buf();
             if let Some(parent) = dvc_file.parent() {
@@ -143,7 +143,7 @@ fn get_file_tree(
                 git_status_map
                     .get(&get_relative_path(&dvc_path))
                     .cloned()
-                    .unwrap_or_else(|| "committed".to_string())
+                    .unwrap_or_else(|| "untracked".to_string())
             } else {
                 "error".to_string()
             }
@@ -152,7 +152,7 @@ fn get_file_tree(
         git_status_map
             .get(&get_relative_path(path))
             .cloned()
-            .unwrap_or_else(|| "committed".to_string())
+            .unwrap_or_else(|| "untracked".to_string())
     };
 
     if metadata.is_dir() {
