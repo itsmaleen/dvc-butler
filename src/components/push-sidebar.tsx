@@ -18,17 +18,20 @@ import {
   trackError,
   trackEvent,
 } from "@/lib/analytics";
+import { FileTreeHandle } from "./file-tree";
 
 export function PushSidebar({
   open,
   onOpenChange,
   stagedFiles,
   repoPath,
+  fileTreeRef,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   stagedFiles: string[];
   repoPath: string;
+  fileTreeRef: React.RefObject<FileTreeHandle>;
 }) {
   const [summary, setSummary] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -56,6 +59,11 @@ export function PushSidebar({
       setSummary("");
       setDescription("");
       onOpenChange(false);
+
+      // Update file tree statuses after successful push
+      if (fileTreeRef.current) {
+        await fileTreeRef.current.updateFileStatuses(stagedFiles);
+      }
     } catch (err: any) {
       console.error(err);
       const errorMessage = err?.toString() || "Unknown error";
