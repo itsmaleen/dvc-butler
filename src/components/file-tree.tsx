@@ -318,7 +318,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           >
             <Checkbox
               checked={isSelected}
-              onCheckedChange={(checked) => {
+              onCheckedChange={() => {
                 setTimeout(() => toggleSelection(fullPath), 0);
               }}
               className="h-4 w-4"
