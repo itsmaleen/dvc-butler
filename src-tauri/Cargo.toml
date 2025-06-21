@@ -27,3 +27,11 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-fs = "2"
 base64 = "0.21"
 
+# Git libraries
+git2 = "0.18"
+gix = { version = "0.55", features = ["max-performance"] }
+
+# Error handling and logging
+anyhow = "1.0"
+tracing = "0.1"
+
