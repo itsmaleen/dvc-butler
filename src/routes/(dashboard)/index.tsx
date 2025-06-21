@@ -9,6 +9,27 @@ import { toast } from "sonner";
 import { TopBar } from "@/components/top-bar";
 import { PushSidebar } from "@/components/push-sidebar";
 
+// Type definitions for the new git2 response structure
+interface GitFile {
+  path: string;
+  status: string;
+  is_staged: boolean;
+  is_untracked: boolean;
+  is_modified: boolean;
+  is_deleted: boolean;
+  is_renamed: boolean;
+}
+
+interface GitStatus {
+  files: GitFile[];
+  current_branch: string;
+  ahead: number;
+  behind: number;
+  has_untracked: boolean;
+  has_staged: boolean;
+  has_unstaged: boolean;
+}
+
 export const Route = createFileRoute("/(dashboard)/")({
   component: Index,
 });
@@ -16,9 +37,7 @@ export const Route = createFileRoute("/(dashboard)/")({
 function Index() {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [pushSidebarOpen, setPushSidebarOpen] = useState(false);
-  const [stagedFiles, setStagedFiles] = useState<
-    { path: string; status: string }[]
-  >([]);
+  const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
   const fileTreeRef = useRef<FileTreeHandle>(null);
 
   const { data: activeProjectId } = useQuery({
@@ -38,12 +57,17 @@ function Index() {
   });
 
   useEffect(() => {
-    invoke<{ path: string; status: string }[]>("git_status", {
-      repoPath: localPath,
-    })
-      .then(setStagedFiles)
-      .catch(() => setStagedFiles([]));
+    if (localPath) {
+      invoke<GitStatus>("git_status", {
+        repoPath: localPath,
+      })
+        .then(setGitStatus)
+        .catch(() => setGitStatus(null));
+    }
   }, [localPath]);
+
+  // Extract staged files from the new structure
+  const stagedFiles = gitStatus?.files.filter((file) => file.is_staged) || [];
 
   const handleCommandAction = async (action: string) => {
     if (!localPath) return;
@@ -63,14 +87,12 @@ function Index() {
             toast.success(`Added and staged ${file} (DVC + git add)`);
           }
 
-          // Update the staged files lists
-          const [newGitStatus] = await Promise.all([
-            invoke<{ path: string; status: string }[]>("git_status", {
-              repoPath: localPath,
-            }),
-          ]);
+          // Update the git status
+          const newGitStatus = await invoke<GitStatus>("git_status", {
+            repoPath: localPath,
+          });
 
-          setStagedFiles(newGitStatus);
+          setGitStatus(newGitStatus);
 
           // Update the file tree status for the affected files
           if (fileTreeRef.current) {
