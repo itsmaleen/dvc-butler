@@ -233,7 +233,6 @@ fn list_file_entries<P: AsRef<Path>>(
                 .map(|s| s.starts_with('.'))
                 .unwrap_or(false)
         }) {
-            println!("Skipping hidden file or directory: {}", path.display());
             continue;
         }
 
@@ -284,17 +283,17 @@ fn list_file_entries<P: AsRef<Path>>(
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
 
-    // println!("files: {:?}", files);
-    println!("files.len(): {}", files.len());
-
     Ok(files)
 }
 
 #[tauri::command]
-pub fn get_file_tree_structure(path: &str) -> Result<Vec<FileEntry>, String> {
+pub fn get_file_tree_structure(
+    app_handle: tauri::AppHandle,
+    path: &str,
+) -> Result<Vec<FileEntry>, String> {
     let path = Path::new(path);
     let (repo_root, git_status_map) = get_repo_git_status(path)?;
-    let dvc_status_map = dvc::dvc_diff(path)?;
+    let dvc_status_map = dvc::dvc_diff(&app_handle, path)?;
 
     // Define directories to ignore (similar to gitbutler-fs patterns)
     let ignore_prefixes = &["target", "node_modules", ".git", "dist", "build"];
@@ -319,8 +318,6 @@ pub fn get_file_binary(path: &str) -> Result<String, String> {
     };
 
     let path = Path::new(&normalized_path);
-
-    println!("path.display(): {}", path.display());
 
     // Read the file as binary
     let content = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
@@ -366,28 +363,19 @@ pub fn get_files_status(
     repo_path: &str,
     file_paths: Vec<String>,
 ) -> Result<Vec<FileStatus>, String> {
-    println!(
-        "\n\n\nget_files_status called with repo_path: {}",
-        repo_path
-    );
     let path = Path::new(repo_path);
     let (repo_root, git_status_map) = get_repo_git_status(path)?;
 
     let mut statuses = Vec::new();
     for file_path in file_paths {
-        println!("file_path: {}", file_path);
         let path = Path::new(&file_path);
-        println!("path: {}", path.display());
         let mut has_dvc_file = false;
         let mut git_path = path.to_string_lossy().to_string();
-        println!("git_path: {}", git_path);
 
         // First check if this is a .dvc file
         if file_path.ends_with(".dvc") {
-            println!("File is a .dvc file");
             has_dvc_file = true;
         } else {
-            println!("File is not a .dvc file, checking for corresponding .dvc file");
             // If not a .dvc file, check if a corresponding .dvc file exists
             let mut dvc_file = path.to_path_buf();
             dvc_file.set_extension(format!(
@@ -398,12 +386,9 @@ pub fn get_files_status(
                 ".dvc"
             ));
             has_dvc_file = dvc_file.exists();
-            println!("Checking for .dvc file at: {}", dvc_file.display());
-            println!("DVC file exists: {}", has_dvc_file);
             if has_dvc_file {
                 // If .dvc file exists, use its path for git status
                 git_path = dvc_file.to_string_lossy().to_string();
-                println!("Using .dvc file path for git status: {}", git_path);
             }
         }
 
@@ -412,14 +397,12 @@ pub fn get_files_status(
             .strip_prefix(&repo_root)
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_else(|_| git_path.replace('\\', "/"));
-        println!("Relative path for git status lookup: {}", relative_path);
 
         // Get git status
         let git_status = git_status_map
             .get(&relative_path)
             .cloned()
             .unwrap_or_else(|| "untracked".to_string());
-        println!("Git status found: {}", git_status);
 
         // Return status for the original file path (without .dvc extension)
         let original_path = if file_path.ends_with(".dvc") {
@@ -427,9 +410,6 @@ pub fn get_files_status(
         } else {
             file_path
         };
-        println!("Returning status for path: {}", original_path);
-        println!("has_dvc_file: {}", has_dvc_file);
-        println!("git_status: {}", git_status);
 
         statuses.push(FileStatus {
             path: original_path,
