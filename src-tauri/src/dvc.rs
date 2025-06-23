@@ -1,3 +1,4 @@
+use git2::Repository;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
@@ -6,19 +7,9 @@ use tauri::command;
 
 #[command]
 pub fn init_dvc_project(path: &str) -> Result<String, String> {
-    // First initialize git repository
-    let git_init = Command::new("git")
-        .arg("init")
-        .current_dir(path)
-        .output()
+    // First initialize git repository using git2
+    let repo = Repository::init(path)
         .map_err(|e| format!("Failed to initialize git repository: {}", e))?;
-
-    if !git_init.status.success() {
-        return Err(format!(
-            "Git init failed: {}",
-            String::from_utf8_lossy(&git_init.stderr)
-        ));
-    }
 
     // Then initialize DVC
     let dvc_init = Command::new("dvc")
@@ -56,22 +47,30 @@ pub fn add_dvc_file(path: &str, file: &str) -> Result<String, String> {
         ));
     }
 
-    // Step 2: git add .gitignore <file>.dvc
-    let dvc_file = format!("{}.dvc", file);
-    let git_add = Command::new("git")
-        .arg("add")
-        .arg(".gitignore")
-        .arg(&dvc_file)
-        .current_dir(path)
-        .output()
-        .map_err(|e| format!("Failed to run git add: {}", e))?;
+    // Step 2: git add .gitignore <file>.dvc using git2
+    let repo =
+        Repository::open(path).map_err(|e| format!("Failed to open git repository: {}", e))?;
 
-    if !git_add.status.success() {
-        return Err(format!(
-            "Git add failed: {}",
-            String::from_utf8_lossy(&git_add.stderr)
-        ));
-    }
+    let dvc_file = format!("{}.dvc", file);
+
+    // Add .gitignore to index
+    let mut index = repo
+        .index()
+        .map_err(|e| format!("Failed to get repository index: {}", e))?;
+
+    index
+        .add_path(Path::new(".gitignore"))
+        .map_err(|e| format!("Failed to add .gitignore to index: {}", e))?;
+
+    // Add .dvc file to index
+    index
+        .add_path(Path::new(&dvc_file))
+        .map_err(|e| format!("Failed to add {} to index: {}", dvc_file, e))?;
+
+    // Write the index
+    index
+        .write()
+        .map_err(|e| format!("Failed to write index: {}", e))?;
 
     Ok(format!(
         "Successfully added {} to DVC and staged .gitignore and {} for git",

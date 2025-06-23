@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use git2::{Repository, StatusOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::State;
@@ -36,116 +36,107 @@ pub struct FileEntry {
     pub git_status: String,
 }
 
-fn parse_git_status(x: char, y: char) -> String {
-    match (x, y) {
-        ('?', '?') => "untracked",        // Untracked files
-        ('A', ' ') => "staged",           // Added to staging
-        ('M', ' ') => "staged",           // Modified and staged
-        ('D', ' ') => "staged",           // Deleted and staged
-        ('R', ' ') => "staged",           // Renamed and staged
-        ('C', ' ') => "staged",           // Copied and staged
-        (' ', 'M') => "modified",         // Modified but not staged
-        (' ', 'D') => "deleted",          // Deleted but not staged
-        ('M', 'M') => "partially_staged", // Modified, partially staged
-        ('A', 'M') => "partially_staged", // Added and modified
-        ('U', 'U') => "conflict",         // Unmerged, both modified
-        ('D', 'D') => "conflict",         // Unmerged, both deleted
-        ('A', 'A') => "conflict",         // Unmerged, both added
-        ('U', 'D') => "conflict",         // Unmerged, deleted by them
-        ('D', 'U') => "conflict",         // Unmerged, deleted by us
-        _ => "other",
-    }
-    .to_string()
-}
-
 fn update_git_status_map(repo_root: &Path) -> Result<HashMap<String, String>, String> {
     let mut status_map = HashMap::new();
 
-    // Get list of all tracked files that are committed and pushed
-    let tracked_files_output = std::process::Command::new("git")
-        .args(["ls-tree", "--full-tree", "-r", "--name-only", "HEAD"])
-        .current_dir(repo_root)
-        .output()
-        .map_err(|e| format!("Failed to execute git ls-tree: {}", e))?;
+    // Open the repository using git2
+    let repo =
+        Repository::open(repo_root).map_err(|e| format!("Failed to open git repository: {}", e))?;
 
-    if !tracked_files_output.status.success() {
-        return Err("Git ls-tree command failed".to_string());
-    }
+    // Check if repository is empty (no HEAD reference)
+    let is_empty = repo.head().is_err();
 
-    let tracked_files: Vec<String> = String::from_utf8_lossy(&tracked_files_output.stdout)
-        .lines()
-        .map(|line| {
-            // Remove quotes and normalize path
-            let path = line.trim().trim_matches('"').to_string();
-            Path::new(&path).to_string_lossy().replace('\\', "/")
+    if !is_empty {
+        // Get the HEAD tree to find tracked files
+        let head = repo
+            .head()
+            .map_err(|e| format!("Failed to get HEAD: {}", e))?;
+
+        let head_commit = head
+            .peel_to_commit()
+            .map_err(|e| format!("Failed to get HEAD commit: {}", e))?;
+
+        let tree = head_commit
+            .tree()
+            .map_err(|e| format!("Failed to get HEAD tree: {}", e))?;
+
+        // Get all tracked files from HEAD
+        let mut tracked_files = Vec::new();
+        tree.walk(git2::TreeWalkMode::PreOrder, |root, entry| {
+            if let Some(name) = entry.name() {
+                let path = if root.is_empty() {
+                    name.to_string()
+                } else {
+                    format!("{}/{}", root, name)
+                };
+                tracked_files.push(path);
+            }
+            git2::TreeWalkResult::Ok
         })
-        .collect();
+        .map_err(|e| format!("Failed to walk tree: {}", e))?;
 
-    // First, mark all tracked files in HEAD as pushed
-    for file in tracked_files {
-        status_map.insert(file, "pushed".to_string());
-    }
-
-    // Get git status for the entire repository
-    let output = std::process::Command::new("git")
-        .arg("status")
-        .arg("--porcelain")
-        .current_dir(repo_root)
-        .output()
-        .map_err(|e| format!("Failed to execute git status: {}", e))?;
-
-    if !output.status.success() {
-        return Err("Git status command failed".to_string());
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for line in stdout.lines() {
-        let trimmed = line.trim();
-        if trimmed.len() < 3 {
-            continue;
+        // First, mark all tracked files in HEAD as pushed
+        for file in tracked_files {
+            status_map.insert(file, "pushed".to_string());
         }
-        let x = trimmed.chars().nth(0).unwrap();
-        let y = trimmed.chars().nth(1).unwrap();
-        let file_path = trimmed.chars().skip(3).collect::<String>();
+    }
 
-        // Remove quotes and normalize path
-        let normalized_path = Path::new(file_path.trim_matches('"'))
-            .to_string_lossy()
-            .replace('\\', "/");
+    // Get git status for the entire repository using git2
+    let mut status_options = StatusOptions::new();
+    status_options.include_untracked(true);
+    status_options.include_ignored(false);
+    status_options.include_unmodified(false);
 
-        status_map.insert(normalized_path, parse_git_status(x, y));
+    let statuses = repo
+        .statuses(Some(&mut status_options))
+        .map_err(|e| format!("Failed to get git status: {}", e))?;
+
+    for entry in statuses.iter() {
+        let status = entry.status();
+        let path = entry.path().ok_or("Failed to get path from status entry")?;
+
+        let normalized_path = Path::new(path).to_string_lossy().replace('\\', "/");
+
+        let git_status = if status.is_wt_new() {
+            "untracked"
+        } else if status.is_index_new() {
+            "staged"
+        } else if status.is_wt_modified() {
+            "modified"
+        } else if status.is_index_modified() {
+            "staged"
+        } else if status.is_wt_deleted() {
+            "deleted"
+        } else if status.is_index_deleted() {
+            "staged"
+        } else if status.is_conflicted() {
+            "conflict"
+        } else {
+            "other"
+        };
+
+        status_map.insert(normalized_path, git_status.to_string());
     }
 
     Ok(status_map)
 }
 
 fn get_repo_git_status(path: &Path) -> Result<(PathBuf, HashMap<String, String>), String> {
-    // Find the git repository root
-    let repo_root_output = std::process::Command::new("git")
-        .arg("rev-parse")
-        .arg("--show-toplevel")
-        .current_dir(path)
-        .output()
-        .map_err(|e| format!("Failed to find git repository: {}", e))?;
+    // Find the git repository root using git2
+    let repo =
+        Repository::discover(path).map_err(|e| format!("Failed to find git repository: {}", e))?;
 
-    if !repo_root_output.status.success() {
-        return Err("Not a git repository".to_string());
-    }
+    let repo_root_path = repo
+        .workdir()
+        .ok_or("Repository has no working directory")?
+        .to_path_buf();
 
-    let repo_root = String::from_utf8_lossy(&repo_root_output.stdout)
-        .trim()
-        .to_string();
-    if repo_root.is_empty() {
-        return Err("Invalid git repository root".to_string());
-    }
-
-    let repo_root_path = PathBuf::from(repo_root);
     let status_map = update_git_status_map(&repo_root_path)?;
 
     Ok((repo_root_path, status_map))
 }
 
-fn check_dvc_file(path: &Path, repo_root: &Path) -> bool {
+fn check_dvc_file(path: &Path) -> bool {
     if path.is_file() {
         let mut dvc_file = path.to_path_buf();
         dvc_file.set_extension(format!(
@@ -267,7 +258,7 @@ fn list_file_entries<P: AsRef<Path>>(
         let metadata = entry
             .metadata()
             .map_err(|e| format!("Failed to get metadata: {}", e))?;
-        let has_dvc_file = check_dvc_file(path, repo_root);
+        let has_dvc_file = check_dvc_file(path);
 
         // Get git status
         let mut git_status = get_git_status_for_path(path, repo_root, git_status_map, has_dvc_file);
