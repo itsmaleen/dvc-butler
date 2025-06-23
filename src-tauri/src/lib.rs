@@ -34,7 +34,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             file::get_file_tree_structure,
             file::get_file_binary,
-            file::get_relative_path,
             dvc::init_dvc_project,
             file::add_selected_file,
             file::remove_selected_file,

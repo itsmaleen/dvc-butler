@@ -8,161 +8,61 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as dashboardRouteRouteImport } from './routes/(dashboard)/route'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as dashboardIndexRouteImport } from './routes/(dashboard)/index'
+import { Route as SettingsRemoteStorageRouteImport } from './routes/settings/remote-storage'
+import { Route as SettingsLocalDataRouteImport } from './routes/settings/local-data'
+import { Route as SettingsGitConfigRouteImport } from './routes/settings/git-config'
+import { Route as dashboardNiftiViewerRouteImport } from './routes/(dashboard)/nifti-viewer'
+import { Route as dashboardDicomViewerRouteImport } from './routes/(dashboard)/dicom-viewer'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as OnboardingImport } from './routes/onboarding'
-import { Route as dashboardRouteImport } from './routes/(dashboard)/route'
-import { Route as SettingsIndexImport } from './routes/settings/index'
-import { Route as dashboardIndexImport } from './routes/(dashboard)/index'
-import { Route as SettingsRemoteStorageImport } from './routes/settings/remote-storage'
-import { Route as SettingsLocalDataImport } from './routes/settings/local-data'
-import { Route as SettingsGitConfigImport } from './routes/settings/git-config'
-import { Route as dashboardNiftiViewerImport } from './routes/(dashboard)/nifti-viewer'
-import { Route as dashboardDicomViewerImport } from './routes/(dashboard)/dicom-viewer'
-
-// Create/Update Routes
-
-const OnboardingRoute = OnboardingImport.update({
+const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const dashboardRouteRoute = dashboardRouteImport.update({
+const dashboardRouteRoute = dashboardRouteRouteImport.update({
   id: '/(dashboard)',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const SettingsIndexRoute = SettingsIndexImport.update({
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const dashboardIndexRoute = dashboardIndexImport.update({
+const dashboardIndexRoute = dashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => dashboardRouteRoute,
 } as any)
-
-const SettingsRemoteStorageRoute = SettingsRemoteStorageImport.update({
+const SettingsRemoteStorageRoute = SettingsRemoteStorageRouteImport.update({
   id: '/settings/remote-storage',
   path: '/settings/remote-storage',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const SettingsLocalDataRoute = SettingsLocalDataImport.update({
+const SettingsLocalDataRoute = SettingsLocalDataRouteImport.update({
   id: '/settings/local-data',
   path: '/settings/local-data',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const SettingsGitConfigRoute = SettingsGitConfigImport.update({
+const SettingsGitConfigRoute = SettingsGitConfigRouteImport.update({
   id: '/settings/git-config',
   path: '/settings/git-config',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const dashboardNiftiViewerRoute = dashboardNiftiViewerImport.update({
+const dashboardNiftiViewerRoute = dashboardNiftiViewerRouteImport.update({
   id: '/nifti-viewer',
   path: '/nifti-viewer',
   getParentRoute: () => dashboardRouteRoute,
 } as any)
-
-const dashboardDicomViewerRoute = dashboardDicomViewerImport.update({
+const dashboardDicomViewerRoute = dashboardDicomViewerRouteImport.update({
   id: '/dicom-viewer',
   path: '/dicom-viewer',
   getParentRoute: () => dashboardRouteRoute,
 } as any)
-
-// Populate the FileRoutesByPath interface
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/(dashboard)': {
-      id: '/(dashboard)'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof dashboardRouteImport
-      parentRoute: typeof rootRoute
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingImport
-      parentRoute: typeof rootRoute
-    }
-    '/(dashboard)/dicom-viewer': {
-      id: '/(dashboard)/dicom-viewer'
-      path: '/dicom-viewer'
-      fullPath: '/dicom-viewer'
-      preLoaderRoute: typeof dashboardDicomViewerImport
-      parentRoute: typeof dashboardRouteImport
-    }
-    '/(dashboard)/nifti-viewer': {
-      id: '/(dashboard)/nifti-viewer'
-      path: '/nifti-viewer'
-      fullPath: '/nifti-viewer'
-      preLoaderRoute: typeof dashboardNiftiViewerImport
-      parentRoute: typeof dashboardRouteImport
-    }
-    '/settings/git-config': {
-      id: '/settings/git-config'
-      path: '/settings/git-config'
-      fullPath: '/settings/git-config'
-      preLoaderRoute: typeof SettingsGitConfigImport
-      parentRoute: typeof rootRoute
-    }
-    '/settings/local-data': {
-      id: '/settings/local-data'
-      path: '/settings/local-data'
-      fullPath: '/settings/local-data'
-      preLoaderRoute: typeof SettingsLocalDataImport
-      parentRoute: typeof rootRoute
-    }
-    '/settings/remote-storage': {
-      id: '/settings/remote-storage'
-      path: '/settings/remote-storage'
-      fullPath: '/settings/remote-storage'
-      preLoaderRoute: typeof SettingsRemoteStorageImport
-      parentRoute: typeof rootRoute
-    }
-    '/(dashboard)/': {
-      id: '/(dashboard)/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof dashboardIndexImport
-      parentRoute: typeof dashboardRouteImport
-    }
-    '/settings/': {
-      id: '/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsIndexImport
-      parentRoute: typeof rootRoute
-    }
-  }
-}
-
-// Create and export the route tree
-
-interface dashboardRouteRouteChildren {
-  dashboardDicomViewerRoute: typeof dashboardDicomViewerRoute
-  dashboardNiftiViewerRoute: typeof dashboardNiftiViewerRoute
-  dashboardIndexRoute: typeof dashboardIndexRoute
-}
-
-const dashboardRouteRouteChildren: dashboardRouteRouteChildren = {
-  dashboardDicomViewerRoute: dashboardDicomViewerRoute,
-  dashboardNiftiViewerRoute: dashboardNiftiViewerRoute,
-  dashboardIndexRoute: dashboardIndexRoute,
-}
-
-const dashboardRouteRouteWithChildren = dashboardRouteRoute._addFileChildren(
-  dashboardRouteRouteChildren,
-)
 
 export interface FileRoutesByFullPath {
   '/': typeof dashboardIndexRoute
@@ -174,7 +74,6 @@ export interface FileRoutesByFullPath {
   '/settings/remote-storage': typeof SettingsRemoteStorageRoute
   '/settings': typeof SettingsIndexRoute
 }
-
 export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/dicom-viewer': typeof dashboardDicomViewerRoute
@@ -185,9 +84,8 @@ export interface FileRoutesByTo {
   '/': typeof dashboardIndexRoute
   '/settings': typeof SettingsIndexRoute
 }
-
 export interface FileRoutesById {
-  __root__: typeof rootRoute
+  __root__: typeof rootRouteImport
   '/(dashboard)': typeof dashboardRouteRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/(dashboard)/dicom-viewer': typeof dashboardDicomViewerRoute
@@ -198,7 +96,6 @@ export interface FileRoutesById {
   '/(dashboard)/': typeof dashboardIndexRoute
   '/settings/': typeof SettingsIndexRoute
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
@@ -233,7 +130,6 @@ export interface FileRouteTypes {
     | '/settings/'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
   dashboardRouteRoute: typeof dashboardRouteRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
@@ -243,6 +139,90 @@ export interface RootRouteChildren {
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(dashboard)': {
+      id: '/(dashboard)'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof dashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(dashboard)/': {
+      id: '/(dashboard)/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof dashboardIndexRouteImport
+      parentRoute: typeof dashboardRouteRoute
+    }
+    '/settings/remote-storage': {
+      id: '/settings/remote-storage'
+      path: '/settings/remote-storage'
+      fullPath: '/settings/remote-storage'
+      preLoaderRoute: typeof SettingsRemoteStorageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/local-data': {
+      id: '/settings/local-data'
+      path: '/settings/local-data'
+      fullPath: '/settings/local-data'
+      preLoaderRoute: typeof SettingsLocalDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/git-config': {
+      id: '/settings/git-config'
+      path: '/settings/git-config'
+      fullPath: '/settings/git-config'
+      preLoaderRoute: typeof SettingsGitConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(dashboard)/nifti-viewer': {
+      id: '/(dashboard)/nifti-viewer'
+      path: '/nifti-viewer'
+      fullPath: '/nifti-viewer'
+      preLoaderRoute: typeof dashboardNiftiViewerRouteImport
+      parentRoute: typeof dashboardRouteRoute
+    }
+    '/(dashboard)/dicom-viewer': {
+      id: '/(dashboard)/dicom-viewer'
+      path: '/dicom-viewer'
+      fullPath: '/dicom-viewer'
+      preLoaderRoute: typeof dashboardDicomViewerRouteImport
+      parentRoute: typeof dashboardRouteRoute
+    }
+  }
+}
+
+interface dashboardRouteRouteChildren {
+  dashboardDicomViewerRoute: typeof dashboardDicomViewerRoute
+  dashboardNiftiViewerRoute: typeof dashboardNiftiViewerRoute
+  dashboardIndexRoute: typeof dashboardIndexRoute
+}
+
+const dashboardRouteRouteChildren: dashboardRouteRouteChildren = {
+  dashboardDicomViewerRoute: dashboardDicomViewerRoute,
+  dashboardNiftiViewerRoute: dashboardNiftiViewerRoute,
+  dashboardIndexRoute: dashboardIndexRoute,
+}
+
+const dashboardRouteRouteWithChildren = dashboardRouteRoute._addFileChildren(
+  dashboardRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   dashboardRouteRoute: dashboardRouteRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
@@ -251,60 +231,6 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRemoteStorageRoute: SettingsRemoteStorageRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/(dashboard)",
-        "/onboarding",
-        "/settings/git-config",
-        "/settings/local-data",
-        "/settings/remote-storage",
-        "/settings/"
-      ]
-    },
-    "/(dashboard)": {
-      "filePath": "(dashboard)/route.tsx",
-      "children": [
-        "/(dashboard)/dicom-viewer",
-        "/(dashboard)/nifti-viewer",
-        "/(dashboard)/"
-      ]
-    },
-    "/onboarding": {
-      "filePath": "onboarding.tsx"
-    },
-    "/(dashboard)/dicom-viewer": {
-      "filePath": "(dashboard)/dicom-viewer.tsx",
-      "parent": "/(dashboard)"
-    },
-    "/(dashboard)/nifti-viewer": {
-      "filePath": "(dashboard)/nifti-viewer.tsx",
-      "parent": "/(dashboard)"
-    },
-    "/settings/git-config": {
-      "filePath": "settings/git-config.tsx"
-    },
-    "/settings/local-data": {
-      "filePath": "settings/local-data.tsx"
-    },
-    "/settings/remote-storage": {
-      "filePath": "settings/remote-storage.tsx"
-    },
-    "/(dashboard)/": {
-      "filePath": "(dashboard)/index.tsx",
-      "parent": "/(dashboard)"
-    },
-    "/settings/": {
-      "filePath": "settings/index.tsx"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

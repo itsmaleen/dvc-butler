@@ -34,4 +34,5 @@ gix = { version = "0.55", features = ["max-performance"] }
 # Error handling and logging
 anyhow = "1.0"
 tracing = "0.1"
+walkdir = "2.5.0"
 

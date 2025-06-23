@@ -80,6 +80,7 @@ pub fn add_dvc_file(path: &str, file: &str) -> Result<String, String> {
 }
 
 pub fn dvc_diff(path: &Path) -> Result<HashMap<String, String>, String> {
+    println!("dvc_diff: {}", path.display());
     let output = Command::new("dvc")
         .arg("diff")
         .arg("--json")

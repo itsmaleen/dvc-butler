@@ -5,6 +5,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::State;
+use walkdir::WalkDir;
 
 use crate::dvc;
 use crate::state::SelectedFilesState;
@@ -24,6 +25,15 @@ pub struct FileStatus {
     pub path: String,
     pub git_status: String,
     pub has_dvc_file: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileEntry {
+    pub path: String,
+    pub size: u64,
+    pub is_directory: bool,
+    pub has_dvc_file: bool,
+    pub git_status: String,
 }
 
 fn parse_git_status(x: char, y: char) -> String {
@@ -135,20 +145,8 @@ fn get_repo_git_status(path: &Path) -> Result<(PathBuf, HashMap<String, String>)
     Ok((repo_root_path, status_map))
 }
 
-fn get_file_tree(
-    path: &Path,
-    repo_root: &Path,
-    git_status_map: &HashMap<String, String>,
-    dvc_status_map: &HashMap<String, String>,
-) -> std::io::Result<FileNode> {
-    let metadata = fs::metadata(path)?;
-    let name = path
-        .file_name()
-        .unwrap_or_else(|| path.as_os_str())
-        .to_string_lossy()
-        .to_string();
-
-    let has_dvc_file = if path.is_file() {
+fn check_dvc_file(path: &Path, repo_root: &Path) -> bool {
+    if path.is_file() {
         let mut dvc_file = path.to_path_buf();
         dvc_file.set_extension(format!(
             "{}{}",
@@ -159,25 +157,29 @@ fn get_file_tree(
         ));
         dvc_file.exists()
     } else {
-        let dvc_file = path.to_path_buf();
-        if let Some(parent) = dvc_file.parent() {
-            let dvc_name = format!("{}.dvc", name);
-            let dvc_path = parent.join(dvc_name);
-            dvc_path.exists()
-        } else {
-            false
-        }
-    };
+        let name = path
+            .file_name()
+            .unwrap_or_else(|| path.as_os_str())
+            .to_string_lossy();
+        let dvc_name = format!("{}.dvc", name);
+        let dvc_path = path.join(dvc_name);
+        dvc_path.exists()
+    }
+}
 
-    // Get relative path from repo root for git status lookup
-    let get_relative_path = |p: &Path| -> String {
-        p.strip_prefix(repo_root)
-            .map(|p| p.to_string_lossy().replace('\\', "/"))
-            .unwrap_or_else(|_| p.to_string_lossy().replace('\\', "/"))
-    };
+fn get_relative_path(path: &Path, repo_root: &Path) -> String {
+    path.strip_prefix(repo_root)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"))
+}
 
-    // Get git status from the map
-    let git_status = if has_dvc_file {
+fn get_git_status_for_path(
+    path: &Path,
+    repo_root: &Path,
+    git_status_map: &HashMap<String, String>,
+    has_dvc_file: bool,
+) -> String {
+    let git_path = if has_dvc_file {
         if path.is_file() {
             let mut dvc_file = path.to_path_buf();
             dvc_file.set_extension(format!(
@@ -187,99 +189,133 @@ fn get_file_tree(
                     .unwrap_or_default(),
                 ".dvc"
             ));
-            git_status_map
-                .get(&get_relative_path(&dvc_file))
-                .cloned()
-                .unwrap_or_else(|| "untracked".to_string())
+            dvc_file
         } else {
-            let dvc_file = path.to_path_buf();
-            if let Some(parent) = dvc_file.parent() {
-                let dvc_name = format!("{}.dvc", name);
-                let dvc_path = parent.join(dvc_name);
-                git_status_map
-                    .get(&get_relative_path(&dvc_path))
-                    .cloned()
-                    .unwrap_or_else(|| "untracked".to_string())
-            } else {
-                "error".to_string()
-            }
-        }
-    } else {
-        git_status_map
-            .get(&get_relative_path(path))
-            .cloned()
-            .unwrap_or_else(|| "untracked".to_string())
-    };
-
-    // Get DVC status if file has DVC tracking
-    let git_status = if has_dvc_file {
-        let relative_path = get_relative_path(path);
-        if let Some(dvc_status) = dvc_status_map.get(&relative_path) {
-            dvc_status.clone()
-        } else {
-            git_status
-        }
-    } else {
-        git_status
-    };
-
-    if metadata.is_dir() {
-        let mut children = Vec::new();
-        let ignored_dirs: &[&str] = &["target", "node_modules"];
-
-        for entry in fs::read_dir(path)? {
-            let entry = entry?;
-            let entry_path = entry.path();
-            let entry_name = entry_path
+            let name = path
                 .file_name()
-                .map(|n| n.to_string_lossy())
-                .unwrap_or_default();
-
-            if entry_name.starts_with('.') {
-                continue;
-            }
-
-            let entry_metadata = entry.metadata()?;
-            if entry_metadata.is_dir() && ignored_dirs.contains(&entry_name.as_ref()) {
-                continue;
-            }
-
-            if entry_name.ends_with(".dvc") {
-                continue;
-            }
-            // Skip symlinks to prevent infinite recursion
-            if entry_metadata.file_type().is_symlink() {
-                continue;
-            }
-            let child = get_file_tree(&entry_path, repo_root, git_status_map, dvc_status_map)?;
-            children.push(child);
+                .unwrap_or_else(|| path.as_os_str())
+                .to_string_lossy();
+            let dvc_name = format!("{}.dvc", name);
+            path.join(dvc_name)
         }
-        Ok(FileNode {
-            name,
-            size: metadata.len(),
-            is_directory: true,
-            children: Some(children),
-            has_dvc_file,
-            git_status,
-        })
     } else {
-        Ok(FileNode {
-            name,
+        path.to_path_buf()
+    };
+
+    let relative_path = get_relative_path(&git_path, repo_root);
+    git_status_map
+        .get(&relative_path)
+        .cloned()
+        .unwrap_or_else(|| "untracked".to_string())
+}
+
+// Returns an ordered list of file entries inside a directory recursively, similar to list_files in gitbutler-fs
+fn list_file_entries<P: AsRef<Path>>(
+    dir_path: P,
+    repo_root: &Path,
+    git_status_map: &HashMap<String, String>,
+    dvc_status_map: &HashMap<String, String>,
+    ignore_prefixes: &[&str],
+    recursive: bool,
+) -> Result<Vec<FileEntry>, String> {
+    let mut files = Vec::new();
+    let dir_path = dir_path.as_ref();
+
+    if !dir_path.exists() {
+        return Ok(files);
+    }
+
+    for entry in WalkDir::new(dir_path).max_depth(if recursive { usize::MAX } else { 1 }) {
+        let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+        let path = entry.path();
+
+        // Skip .git directory
+        if path.components().any(|c| c.as_os_str() == ".git") {
+            continue;
+        }
+
+        // Skip hidden files and directories (including anything within hidden directories)
+        if path.components().any(|component| {
+            component
+                .as_os_str()
+                .to_str()
+                .map(|s| s.starts_with('.'))
+                .unwrap_or(false)
+        }) {
+            println!("Skipping hidden file or directory: {}", path.display());
+            continue;
+        }
+
+        // Skip ignored directories
+        if entry.file_type().is_dir() {
+            let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if ignore_prefixes.contains(&dir_name) {
+                continue;
+            }
+        }
+
+        // Skip .dvc files themselves
+        if path.extension().and_then(|e| e.to_str()) == Some("dvc") {
+            continue;
+        }
+
+        // Skip symlinks to prevent infinite recursion
+        if entry.file_type().is_symlink() {
+            continue;
+        }
+
+        let metadata = entry
+            .metadata()
+            .map_err(|e| format!("Failed to get metadata: {}", e))?;
+        let has_dvc_file = check_dvc_file(path, repo_root);
+
+        // Get git status
+        let mut git_status = get_git_status_for_path(path, repo_root, git_status_map, has_dvc_file);
+
+        // Override with DVC status if file has DVC tracking
+        if has_dvc_file {
+            let relative_path = get_relative_path(path, repo_root);
+            if let Some(dvc_status) = dvc_status_map.get(&relative_path) {
+                git_status = dvc_status.clone();
+            }
+        }
+
+        let relative_path = get_relative_path(path, repo_root);
+
+        files.push(FileEntry {
+            path: relative_path,
             size: metadata.len(),
-            is_directory: false,
-            children: None,
+            is_directory: entry.file_type().is_dir(),
             has_dvc_file,
             git_status,
-        })
+        });
     }
+
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+
+    // println!("files: {:?}", files);
+    println!("files.len(): {}", files.len());
+
+    Ok(files)
 }
 
 #[tauri::command]
-pub fn get_file_tree_structure(path: &str) -> Result<FileNode, String> {
+pub fn get_file_tree_structure(path: &str) -> Result<Vec<FileEntry>, String> {
     let path = Path::new(path);
     let (repo_root, git_status_map) = get_repo_git_status(path)?;
     let dvc_status_map = dvc::dvc_diff(path)?;
-    get_file_tree(path, &repo_root, &git_status_map, &dvc_status_map).map_err(|e| e.to_string())
+
+    // Define directories to ignore (similar to gitbutler-fs patterns)
+    let ignore_prefixes = &["target", "node_modules", ".git", "dist", "build"];
+
+    list_file_entries(
+        path,
+        &repo_root,
+        &git_status_map,
+        &dvc_status_map,
+        ignore_prefixes,
+        true, // recursive
+    )
 }
 
 #[tauri::command]
@@ -302,21 +338,6 @@ pub fn get_file_binary(path: &str) -> Result<String, String> {
     let base64_content = BASE64.encode(content);
 
     Ok(base64_content)
-}
-
-#[tauri::command]
-pub fn get_relative_path(absolute_path: &str) -> Result<String, String> {
-    let home_dir = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-    let home_path = Path::new(&home_dir);
-    let abs_path = Path::new(absolute_path);
-
-    println!("home_path: {}", home_path.display());
-    println!("abs_path: {}", abs_path.display());
-
-    abs_path
-        .strip_prefix(home_path)
-        .map(|p| p.to_string_lossy().to_string())
-        .map_err(|e| format!("Failed to convert path: {}", e))
 }
 
 #[tauri::command]
