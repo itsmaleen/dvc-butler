@@ -15,6 +15,14 @@ import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { EventCategory, startTiming, endTiming } from "@/lib/analytics";
 
+interface FileEntry {
+  path: string;
+  size: number;
+  is_directory: boolean;
+  has_dvc_file: boolean;
+  git_status: string;
+}
+
 interface FileNode {
   name: string;
   size: number;
@@ -37,6 +45,78 @@ interface FileTreeProps {
 
 export interface FileTreeHandle {
   updateFileStatuses: (paths: string[]) => Promise<void>;
+}
+
+// Convert flat FileEntry array to hierarchical FileNode tree
+function buildFileTree(entries: FileEntry[]): FileNode | null {
+  if (entries.length === 0) {
+    return null;
+  }
+
+  // The entries have paths relative to the repository root
+  // We need to build a tree structure from these flat paths
+
+  // Create a map to store nodes by their path
+  const nodeMap = new Map<string, FileNode>();
+
+  // Sort entries by path to ensure parent directories come before children
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.path.localeCompare(b.path)
+  );
+
+  for (const entry of sortedEntries) {
+    const pathParts = entry.path.split("/");
+    const name = pathParts[pathParts.length - 1];
+
+    const node: FileNode = {
+      name,
+      size: entry.size,
+      is_directory: entry.is_directory,
+      children: entry.is_directory ? [] : undefined,
+      has_dvc_file: entry.has_dvc_file,
+      git_status: entry.git_status,
+    };
+
+    nodeMap.set(entry.path, node);
+
+    // If this is not the root level, add it to its parent's children
+    if (pathParts.length > 1) {
+      const parentPath = pathParts.slice(0, -1).join("/");
+      const parentNode = nodeMap.get(parentPath);
+      if (parentNode && parentNode.children) {
+        parentNode.children.push(node);
+      }
+    }
+  }
+
+  // Find the root node (the one with the shortest path)
+  const rootPaths = Array.from(nodeMap.keys()).filter((path) => {
+    const pathParts = path.split("/");
+    return pathParts.length === 1;
+  });
+
+  if (rootPaths.length === 0) {
+    return null;
+  }
+
+  // Create a virtual root node that contains all top-level items
+  const rootNode: FileNode = {
+    name: "",
+    size: 0,
+    is_directory: true,
+    children: [],
+    has_dvc_file: false,
+    git_status: "",
+  };
+
+  for (const rootPath of rootPaths) {
+    const node = nodeMap.get(rootPath);
+    if (node) {
+      rootNode.children!.push(node);
+    }
+  }
+
+  return rootNode;
 }
 
 export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
@@ -141,11 +221,14 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         path: initialPath,
       });
       try {
-        const result = await invoke<FileNode>("get_file_tree_structure", {
+        const result = await invoke<FileEntry[]>("get_file_tree_structure", {
           path: initialPath,
         });
-        setTree(result);
+        console.log("result", result);
+        const treeStructure = buildFileTree(result);
+        setTree(treeStructure);
       } catch (error) {
+        alert("Error loading file tree: " + error);
         console.error("Error loading file tree:", error);
       } finally {
         endTiming(timingId);
@@ -260,7 +343,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
     const renderNode = (node: FileNode, path: string, level: number = 0) => {
       // Skip hidden files and folders (those starting with .)
-      if (node.name.startsWith(".")) {
+      if (node.name.startsWith(".") || node.name === "") {
         return null;
       }
 

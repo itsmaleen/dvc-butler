@@ -7,7 +7,7 @@ import {
 import { getCurrentProject, getProjects, setCurrentProject } from "@/lib/db";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GalleryVerticalEnd } from "lucide-react";
-import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate, createFileRoute } from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 
-export const Route = createRootRoute({
+export const Route = createFileRoute("/(dashboard)")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
       path: search.path as string | undefined,

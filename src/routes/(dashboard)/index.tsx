@@ -99,7 +99,7 @@ function Index() {
             await fileTreeRef.current.updateFileStatuses(selectedFiles);
           }
         } catch (error) {
-          console.error(error);
+          alert(error);
           toast.error("Failed to add files", {
             description:
               error instanceof Error ? error.message : "Unknown error occurred",
