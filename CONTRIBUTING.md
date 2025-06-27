@@ -15,10 +15,8 @@ Fork this repository to create your own copy. You can do this by clicking the **
 Once you've forked the repository, clone it to your local machine using the following command:
 
 ```bash
-git clone https://github.com/<your-username>/<repository-name>.git
+git clone https://github.com/itsmaleen/fenn-app.git
 ```
-
-Replace `<your-username>` with your GitHub username and `<repository-name>` with the name of the repository.
 
 ### 3. Create a New Branch
 Before making any changes, create a new branch to work on. This helps keep your changes organized and separate from the main branch.
@@ -63,7 +61,7 @@ Go to the original repository on GitHub and click the **Pull Requests** tab. The
 ---
 
 ## **Code of Conduct**
-Please be respectful and constructive in your contributions. Follow the project's coding standards and guidelines.
+Please be respectful and constructive in your contributions
 
 ---
 
