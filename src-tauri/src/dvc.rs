@@ -11,25 +11,58 @@ use tauri::Manager;
 /// Helper function to find script and venv paths using Tauri's resource system
 fn find_script_path(app_handle: &AppHandle, exe_name: &str) -> Result<std::path::PathBuf, String> {
     println!("Finding script path for: {}", exe_name);
-    // Always check src-tauri/scripts/{exe_name} relative to the project root
+
+    // Determine the appropriate extension based on platform
+    let extension = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ".bin"
+    };
+    let script_name = if exe_name.ends_with(".exe") {
+        exe_name.replace(".exe", extension)
+    } else if exe_name.ends_with(".bin") {
+        exe_name.replace(".bin", extension)
+    } else {
+        format!("{}{}", exe_name, extension)
+    };
+
+    // First, check if we're in development mode (check dvc-scripts in project root)
     let project_root =
         std::env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
     println!("Project root: {}", project_root.display());
-    let scripts_path = project_root.join("scripts").join(exe_name);
-    println!("Scripts path: {}", scripts_path.display());
+
+    let scripts_path = project_root.join("dvc-scripts").join(&script_name);
+    println!("Development scripts path: {}", scripts_path.display());
     if scripts_path.exists() {
-        println!("Scripts path exists");
+        println!("Development scripts path exists");
         println!(
-            "Found script in project src-tauri/scripts: {}",
+            "Found script in development dvc-scripts: {}",
             scripts_path.display()
         );
         return Ok(scripts_path);
     }
-    println!("Scripts path does not exist");
+    println!("Development scripts path does not exist");
+
+    // If not found in development, try to get from bundled resources
+    let resource_path = app_handle
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to get resource directory: {}", e))?;
+
+    let bundled_script_path = resource_path.join("dvc-scripts").join(&script_name);
+    println!("Bundled script path: {}", bundled_script_path.display());
+    if bundled_script_path.exists() {
+        println!(
+            "Found script in bundled resources: {}",
+            bundled_script_path.display()
+        );
+        return Ok(bundled_script_path);
+    }
+    println!("Bundled script path does not exist");
 
     Err(format!(
-        "Executable '{}' not found in src-tauri/scripts, bundled resources, or development paths",
-        exe_name
+        "Executable '{}' not found in development dvc-scripts or bundled resources",
+        script_name
     ))
 }
 
