@@ -27,4 +27,7 @@ dist-ssr
 
 .rust_analyzer/*
 
-src-tauri/scripts/venv/
+venv/
+
+*.cmd
+*.build

@@ -323,6 +323,34 @@ The Python scripts provide the same functionality as the DVC commands but with t
 - DVC 3.60.0+
 - A DVC repository (run `dvc init` if not already initialized)
 
-## License
+## Building Executables with Nuitka
 
-This project is open source and available under the MIT License. 
+You can build standalone executables from the Python scripts using [Nuitka](https://nuitka.net/). This is useful if you want to distribute the scripts without requiring a Python environment.
+
+### Installation
+
+Install Nuitka using pip:
+
+```bash
+python -m pip install Nuitka
+```
+
+### Building Executables
+
+Navigate to the `scripts/python` directory and run Nuitka on any of the `*_script.py` files to build an executable. For example:
+
+```bash
+# Build an executable for dvc_add_script.py
+python -m nuitka dvc_add_script.py
+
+# Build an executable for dvc_diff_script.py
+python -m nuitka dvc_diff_script.py
+```
+
+You can also build all script files at once:
+
+```bash
+python -m nuitka python/*_script.py
+```
+
+This will generate standalone executables (e.g., `dvc_add_script.exe`, `dvc_diff_script.exe`) in the current directory, which can be used directly without needing Python installed. 
