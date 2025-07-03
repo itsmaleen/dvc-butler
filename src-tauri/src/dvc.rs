@@ -9,72 +9,59 @@ use tauri::AppHandle;
 use tauri::Manager;
 
 /// Helper function to find script and venv paths using Tauri's resource system
-fn find_script_paths(
-    app_handle: &AppHandle,
-    script_name: &str,
-) -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
-    // Use .ok() to convert Result to Option
-    if let Some(resource_dir) = app_handle.path().resource_dir().ok() {
-        let script_path = resource_dir.join("scripts").join(script_name);
-        let venv_path = resource_dir
-            .join("scripts")
-            .join("venv")
-            .join("bin")
-            .join("python3");
+fn find_script_path(app_handle: &AppHandle, exe_name: &str) -> Result<std::path::PathBuf, String> {
+    println!("Finding script path for: {}", exe_name);
 
-        if script_path.exists() && venv_path.exists() {
-            println!(
-                "Found bundled resources: script={}, venv={}",
-                script_path.display(),
-                venv_path.display()
-            );
-            return Ok((script_path, venv_path));
-        }
-    }
+    // Determine the appropriate extension based on platform
+    let extension = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ".bin"
+    };
+    let script_name = if exe_name.ends_with(".exe") {
+        exe_name.replace(".exe", extension)
+    } else if exe_name.ends_with(".bin") {
+        exe_name.replace(".bin", extension)
+    } else {
+        format!("{}{}", exe_name, extension)
+    };
 
-    // Fallback: try development paths
-    let cwd =
+    // First, check if we're in development mode (check dvc-scripts in project root)
+    let project_root =
         std::env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
-    let potential_script_path = cwd.join("src-tauri").join("scripts").join(script_name);
-    let potential_venv_path = cwd
-        .join("src-tauri")
-        .join("scripts")
-        .join("venv")
-        .join("bin")
-        .join("python3");
+    println!("Project root: {}", project_root.display());
 
-    if potential_script_path.exists() && potential_venv_path.exists() {
+    let scripts_path = project_root.join("dvc-scripts").join(&script_name);
+    println!("Development scripts path: {}", scripts_path.display());
+    if scripts_path.exists() {
+        println!("Development scripts path exists");
         println!(
-            "Found development resources: script={}, venv={}",
-            potential_script_path.display(),
-            potential_venv_path.display()
+            "Found script in development dvc-scripts: {}",
+            scripts_path.display()
         );
-        return Ok((potential_script_path, potential_venv_path));
+        return Ok(scripts_path);
     }
+    println!("Development scripts path does not exist");
 
-    // Try the executable directory as last resort
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            let potential_script_path = exe_dir.join("scripts").join(script_name);
-            let potential_venv_path = exe_dir
-                .join("scripts")
-                .join("venv")
-                .join("bin")
-                .join("python3");
+    // If not found in development, try to get from bundled resources
+    let resource_path = app_handle
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to get resource directory: {}", e))?;
 
-            if potential_script_path.exists() && potential_venv_path.exists() {
-                println!(
-                    "Found executable-relative resources: script={}, venv={}",
-                    potential_script_path.display(),
-                    potential_venv_path.display()
-                );
-                return Ok((potential_script_path, potential_venv_path));
-            }
-        }
+    let bundled_script_path = resource_path.join("dvc-scripts").join(&script_name);
+    println!("Bundled script path: {}", bundled_script_path.display());
+    if bundled_script_path.exists() {
+        println!(
+            "Found script in bundled resources: {}",
+            bundled_script_path.display()
+        );
+        return Ok(bundled_script_path);
     }
+    println!("Bundled script path does not exist");
 
     Err(format!(
-        "Python script '{}' not found in bundled resources or development paths",
+        "Executable '{}' not found in development dvc-scripts or bundled resources",
         script_name
     ))
 }
@@ -116,17 +103,16 @@ pub fn init_dvc_project(app_handle: AppHandle, path: &str) -> Result<String, Str
             .map_err(|e| format!("Failed to create initial commit: {}", e))?;
     }
 
-    // Find the script paths using the helper function
-    let (script_path, venv_path) = find_script_paths(&app_handle, "dvc_init_script.py")?;
+    // Find the exe path using the helper function
+    let exe_path = find_script_path(&app_handle, "dvc_init_script.exe")?;
 
-    // Then initialize DVC using Python script
-    let dvc_init = Command::new(venv_path)
-        .arg(script_path.to_str().unwrap())
+    // Then initialize DVC using the exe
+    let dvc_init = Command::new(exe_path)
         .arg("--repo-path")
         .arg(path)
         .current_dir(path)
         .output()
-        .map_err(|e| format!("Failed to run dvc_init_script.py: {}", e))?;
+        .map_err(|e| format!("Failed to run dvc_init_script.exe: {}", e))?;
 
     if !dvc_init.status.success() {
         return Err(format!(
@@ -143,16 +129,15 @@ pub fn add_dvc_file(app_handle: AppHandle, path: &str, file: &str) -> Result<Str
     println!("Adding DVC file: {}", file);
     println!("Path: {}", path);
 
-    // Find the script paths using the helper function
-    let (script_path, venv_path) = find_script_paths(&app_handle, "dvc_add_script.py")?;
+    // Find the exe path using the helper function
+    let exe_path = find_script_path(&app_handle, "dvc_add_script.exe")?;
 
-    // Step 1: dvc add <file> using Python script
-    let dvc_add = Command::new(venv_path)
-        .arg(script_path.to_str().unwrap())
+    // Step 1: dvc add <file> using the exe
+    let dvc_add = Command::new(exe_path)
         .arg(file)
         .current_dir(path)
         .output()
-        .map_err(|e| format!("Failed to run dvc_add_script.py: {}", e))?;
+        .map_err(|e| format!("Failed to run dvc_add_script.exe: {}", e))?;
 
     if !dvc_add.status.success() {
         return Err(format!(
@@ -267,18 +252,16 @@ pub fn add_dvc_file(app_handle: AppHandle, path: &str, file: &str) -> Result<Str
 pub fn dvc_diff(app_handle: &AppHandle, path: &Path) -> Result<HashMap<String, String>, String> {
     println!("dvc_diff: {}", path.display());
 
-    // Find the script paths using the helper function
-    let (script_path, venv_path) = find_script_paths(app_handle, "dvc_diff_script.py")?;
+    // Find the exe path using the helper function
+    let exe_path = find_script_path(app_handle, "dvc_diff_script.exe")?;
 
-    println!("Using script path: {}", script_path.display());
-    println!("Using venv path: {}", venv_path.display());
+    println!("Using exe path: {}", exe_path.display());
 
-    // Run the Python script using the virtual environment
-    let output = Command::new(venv_path)
-        .arg(script_path.to_str().unwrap())
+    // Run the exe
+    let output = Command::new(exe_path)
         .current_dir(path)
         .output()
-        .map_err(|e| format!("Failed to run dvc_diff_script.py: {}", e))?;
+        .map_err(|e| format!("Failed to run dvc_diff_script.exe: {}", e))?;
 
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).to_string());
