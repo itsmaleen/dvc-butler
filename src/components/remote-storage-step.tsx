@@ -41,6 +41,8 @@ interface RemoteStorageStepProps {
   showSaveCancel?: boolean;
 }
 
+// TODO: Implement remote storage configuration
+// https://dvc.org/doc/user-guide/data-management/remote-storage/amazon-s3
 export default function RemoteStorageStep({
   remoteStorageConfig,
   onRemoteStorageConfigChange,
@@ -82,7 +84,7 @@ export default function RemoteStorageStep({
   const handleBrowseLocalPath = () => {
     // In a real implementation, this would open a folder picker dialog
     // For now, we'll just simulate it with a sample path
-    const samplePath = "/Users/username/Documents/dicom-remote-storage";
+    const samplePath = "/Users/username/Documents/data-remote-storage";
     handleConfigChange("localPath", samplePath);
   };
 
@@ -128,7 +130,7 @@ export default function RemoteStorageStep({
           Remote Storage Configuration
         </h2>
         <p className="text-muted-foreground">
-          Configure where your DICOM data will be stored remotely.
+          Configure where your data files will be stored remotely.
         </p>
       </div>
 
@@ -137,7 +139,7 @@ export default function RemoteStorageStep({
           <div className="flex items-center gap-2">
             <Label htmlFor="storage-type">Storage Type</Label>
             <HelpTooltip
-              content="Select the type of remote storage you want to use for your DICOM data. This will determine where your data is stored and how it's accessed."
+              content="Select the type of remote storage you want to use for your data files. This will determine where your data is stored and how it's accessed."
               side="right"
             />
           </div>
@@ -165,8 +167,8 @@ export default function RemoteStorageStep({
                 <CloudIcon className="h-4 w-4 mt-0.5 mr-2 text-blue-500" />
 
                 <AlertDescription className="text-sm">
-                  Amazon S3 provides scalable object storage for your DICOM
-                  data.
+                  Amazon S3 provides scalable object storage for your data
+                  files.
                 </AlertDescription>
               </Alert>
 
@@ -175,13 +177,13 @@ export default function RemoteStorageStep({
                   <div className="flex items-center gap-2">
                     <Label htmlFor="s3-bucket">Bucket Name</Label>
                     <HelpTooltip
-                      content="The name of the S3 bucket where your DICOM data will be stored. Bucket names must be globally unique across all AWS accounts."
+                      content="The name of the S3 bucket where your data files will be stored. Bucket names must be globally unique across all AWS accounts."
                       side="right"
                     />
                   </div>
                   <Input
                     id="s3-bucket"
-                    placeholder="my-dicom-bucket"
+                    placeholder="my-data-bucket"
                     value={remoteStorageConfig.bucketName || ""}
                     onChange={(e) =>
                       handleConfigChange("bucketName", e.target.value)
@@ -270,7 +272,7 @@ export default function RemoteStorageStep({
 
                 <AlertDescription className="text-sm">
                   Google Cloud Storage provides unified object storage for your
-                  DICOM data.
+                  data files.
                 </AlertDescription>
               </Alert>
 
@@ -279,13 +281,13 @@ export default function RemoteStorageStep({
                   <div className="flex items-center gap-2">
                     <Label htmlFor="gcs-bucket">Bucket Name</Label>
                     <HelpTooltip
-                      content="The name of the GCS bucket where your DICOM data will be stored. Bucket names must be globally unique across all GCP projects."
+                      content="The name of the GCS bucket where your data files will be stored. Bucket names must be globally unique across all GCP projects."
                       side="right"
                     />
                   </div>
                   <Input
                     id="gcs-bucket"
-                    placeholder="my-dicom-bucket"
+                    placeholder="my-data-bucket"
                     value={remoteStorageConfig.bucketName || ""}
                     onChange={(e) =>
                       handleConfigChange("bucketName", e.target.value)
@@ -384,7 +386,7 @@ export default function RemoteStorageStep({
 
                 <AlertDescription className="text-sm">
                   Azure Blob Storage provides scalable object storage for your
-                  DICOM data.
+                  data files.
                 </AlertDescription>
               </Alert>
 
@@ -393,13 +395,13 @@ export default function RemoteStorageStep({
                   <div className="flex items-center gap-2">
                     <Label htmlFor="azure-container">Container Name</Label>
                     <HelpTooltip
-                      content="The name of the Azure Storage container where your DICOM data will be stored. Container names must be unique within your storage account."
+                      content="The name of the Azure Storage container where your data files will be stored. Container names must be unique within your storage account."
                       side="right"
                     />
                   </div>
                   <Input
                     id="azure-container"
-                    placeholder="my-dicom-container"
+                    placeholder="my-data-container"
                     value={remoteStorageConfig.containerName || ""}
                     onChange={(e) =>
                       handleConfigChange("containerName", e.target.value)
@@ -470,7 +472,7 @@ export default function RemoteStorageStep({
                 <FolderIcon className="h-4 w-4 mt-0.5 mr-2 text-blue-500" />
 
                 <AlertDescription className="text-sm">
-                  Use a local path as remote storage for your DICOM data. This
+                  Use a local path as remote storage for your data files. This
                   is useful for testing or when you don't need cloud storage.
                 </AlertDescription>
               </Alert>
@@ -479,7 +481,7 @@ export default function RemoteStorageStep({
                 <div className="flex items-center gap-2">
                   <Label htmlFor="local-path">Local Path</Label>
                   <HelpTooltip
-                    content="A path on your local file system or network drive where DICOM data will be stored. This should be a location with sufficient disk space."
+                    content="A path on your local file system or network drive where data files will be stored. This should be a location with sufficient disk space."
                     side="right"
                   />
                 </div>
