@@ -35,7 +35,7 @@ export const Route = createFileRoute("/(dashboard)/")({
 });
 
 function Index() {
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [pushSidebarOpen, setPushSidebarOpen] = useState(false);
   const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
   const fileTreeRef = useRef<FileTreeHandle>(null);
@@ -66,6 +66,10 @@ function Index() {
     }
   }, [localPath]);
 
+  useEffect(() => {
+    console.log("selectedFiles", selectedFiles);
+  }, [selectedFiles]);
+
   // Extract staged files from the new structure
   const stagedFiles = gitStatus?.files.filter((file) => file.is_staged) || [];
 
@@ -74,7 +78,7 @@ function Index() {
 
     switch (action) {
       case "clear":
-        setSelectedFiles([]);
+        setSelectedFiles(new Set());
         await invoke("clear_selected_files");
         break;
       case "add":
@@ -96,7 +100,9 @@ function Index() {
 
           // Update the file tree status for the affected files
           if (fileTreeRef.current) {
-            await fileTreeRef.current.updateFileStatuses(selectedFiles);
+            await fileTreeRef.current.updateFileStatuses(
+              Array.from(selectedFiles)
+            );
           }
         } catch (error) {
           alert(error);
@@ -154,7 +160,7 @@ function Index() {
         )}
       </div>
       <CommandCenter
-        selectedFiles={selectedFiles}
+        selectedFiles={Array.from(selectedFiles)}
         onAction={handleCommandAction}
       />
     </>

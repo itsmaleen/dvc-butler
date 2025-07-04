@@ -40,7 +40,7 @@ interface FileStatus {
 
 interface FileTreeProps {
   initialPath: string;
-  onSelectionChange?: (selectedPaths: string[]) => void;
+  onSelectionChange?: (selectedPaths: Set<string>) => void;
 }
 
 export interface FileTreeHandle {
@@ -240,6 +240,60 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       loadTree();
     }, [initialPath]);
 
+    // Helper to get all descendant file and folder paths for a given node
+    const getAllDescendantPaths = (
+      node: FileNode,
+      currentPath: string
+    ): string[] => {
+      let paths: string[] = [];
+      const fullPath = currentPath + "/" + node.name;
+      if (node.is_directory && node.children) {
+        for (const child of node.children) {
+          paths.push(fullPath + "/" + child.name);
+          if (child.is_directory) {
+            paths = paths.concat(getAllDescendantPaths(child, fullPath));
+          }
+        }
+      }
+      return paths;
+    };
+
+    const findNodeByPath = (
+      node: FileNode,
+      targetPath: string,
+      currentPath: string
+    ): FileNode | null => {
+      // For the virtual root node (name === ""), use currentPath as fullPath
+      const fullPath =
+        node.name === "" ? currentPath : currentPath + "/" + node.name;
+      if (fullPath === targetPath) return node;
+      if (node.is_directory && node.children) {
+        for (const child of node.children) {
+          const found = findNodeByPath(child, targetPath, fullPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const getAllDescendantFolderPaths = (
+      node: FileNode,
+      currentPath: string
+    ): string[] => {
+      let paths: string[] = [];
+      const fullPath =
+        node.name === "" ? currentPath : currentPath + "/" + node.name;
+      if (node.is_directory && node.children) {
+        paths.push(fullPath);
+        for (const child of node.children) {
+          if (child.is_directory) {
+            paths = paths.concat(getAllDescendantFolderPaths(child, fullPath));
+          }
+        }
+      }
+      return paths;
+    };
+
     const toggleFolder = (path: string) => {
       const timingId = startTiming(EventCategory.ACTION, "toggle_folder", {
         path,
@@ -263,22 +317,78 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         { path }
       );
       try {
+        // Find the node for the given path
+        let node: FileNode | null = null;
+        if (tree) {
+          node = findNodeByPath(tree, path, initialPath);
+        }
+        console.log("node", node);
         if (selectedPaths.has(path)) {
-          await invoke("remove_selected_file", { path });
-          setSelectedPaths((prev) => {
-            const next = new Set(prev);
-            next.delete(path);
-            onSelectionChange?.(Array.from(next));
-            return next;
-          });
+          // Unselect this path and all descendants if directory
+          if (node && node.is_directory) {
+            console.log("unselecting directory", path);
+            const allDescendants = getAllDescendantPaths(
+              node,
+              path.substring(0, path.lastIndexOf("/"))
+            );
+            console.log("allDescendants", allDescendants);
+            // Remove all descendants and the folder itself
+            await invoke("remove_selected_file", { path });
+            for (const descendant of allDescendants) {
+              await invoke("remove_selected_file", { path: descendant });
+            }
+            setSelectedPaths((prev) => {
+              const next = new Set(prev);
+              next.delete(path);
+              for (const descendant of allDescendants) {
+                next.delete(descendant);
+              }
+              onSelectionChange?.(next);
+              return next;
+            });
+          } else {
+            await invoke("remove_selected_file", { path });
+            setSelectedPaths((prev) => {
+              const next = new Set(prev);
+              next.delete(path);
+              onSelectionChange?.(next);
+              return next;
+            });
+          }
         } else {
-          await invoke("add_selected_file", { path });
-          setSelectedPaths((prev) => {
-            const next = new Set(prev);
-            next.add(path);
-            onSelectionChange?.(Array.from(next));
-            return next;
-          });
+          // Select this path and all descendants if directory
+          if (node && node.is_directory) {
+            console.log("selecting directory", path);
+            const allDescendants = getAllDescendantPaths(
+              node,
+              path.substring(0, path.lastIndexOf("/"))
+            );
+            console.log("allDescendants", allDescendants);
+            // Add all descendants and the folder itself
+            await invoke("add_selected_file", { path });
+            for (const descendant of allDescendants) {
+              await invoke("add_selected_file", { path: descendant });
+            }
+            setSelectedPaths((prev) => {
+              const next = new Set(prev);
+              next.add(path);
+              for (const descendant of allDescendants) {
+                next.add(descendant);
+              }
+              onSelectionChange?.(next);
+              return next;
+            });
+          } else {
+            console.log("selecting file (not directory)", path);
+            console.log("selected node", node);
+            await invoke("add_selected_file", { path });
+            setSelectedPaths((prev) => {
+              const next = new Set(prev);
+              next.add(path);
+              onSelectionChange?.(next);
+              return next;
+            });
+          }
         }
       } catch (error) {
         console.error("Error toggling file selection:", error);
@@ -341,6 +451,32 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       }
     };
 
+    // Helper to determine if a folder is indeterminate (some but not all children selected)
+    const isFolderIndeterminate = (
+      node: FileNode,
+      fullPath: string
+    ): boolean => {
+      if (!node.is_directory || !node.children || node.children.length === 0)
+        return false;
+      let total = 0;
+      let selected = 0;
+      const countSelections = (n: FileNode, p: string) => {
+        const fp = p + "/" + n.name;
+        if (n.is_directory && n.children) {
+          for (const child of n.children) {
+            countSelections(child, fp);
+          }
+        } else {
+          total++;
+          if (selectedPaths.has(fp)) selected++;
+        }
+      };
+      for (const child of node.children) {
+        countSelections(child, fullPath);
+      }
+      return selected > 0 && selected < total;
+    };
+
     const renderNode = (node: FileNode, path: string, level: number = 0) => {
       // Skip hidden files and folders (those starting with .)
       if (node.name.startsWith(".") || node.name === "") {
@@ -351,13 +487,6 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
       const isExpanded = expandedFolders.has(fullPath);
       const isSelected = selectedPaths.has(fullPath);
-      const isDicomFile =
-        !node.is_directory && node.name.toLowerCase().endsWith(".dcm");
-
-      const isNiftiFile =
-        !node.is_directory &&
-        (node.name.toLowerCase().endsWith(".nii") ||
-          node.name.toLowerCase().endsWith(".nii.gz"));
 
       const displayStatus = node.git_status;
 
@@ -391,16 +520,21 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         </span>
       ) : null;
 
+      // Indeterminate state for folders
+      const indeterminate =
+        node.is_directory && isFolderIndeterminate(node, path);
+
       return (
         <div key={fullPath}>
           <div
             className={cn(
-              "flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-sm",
-              level > 0 && "ml-4"
+              "flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-sm"
             )}
+            style={{ marginLeft: `${level * 16}px` }}
           >
             <Checkbox
               checked={isSelected}
+              indeterminate={indeterminate}
               onCheckedChange={() => {
                 setTimeout(() => toggleSelection(fullPath), 0);
               }}
@@ -426,25 +560,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             ) : (
               <div className="flex items-center gap-1 text-sm">
                 <File className="h-4 w-4 text-gray-500" />
-                {isDicomFile ? (
-                  <Link
-                    to="/dicom-viewer"
-                    search={{ path: fullPath }}
-                    className="text-blue-500 hover:underline"
-                  >
-                    {node.name}
-                  </Link>
-                ) : isNiftiFile ? (
-                  <Link
-                    to="/nifti-viewer"
-                    search={{ path: fullPath }}
-                    className="text-blue-500 hover:underline"
-                  >
-                    {node.name}
-                  </Link>
-                ) : (
-                  <span>{node.name}</span>
-                )}
+                <span>{node.name}</span>
                 {dvcTrackedIcon}
               </div>
             )}
