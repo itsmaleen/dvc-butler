@@ -10,6 +10,7 @@ import {
   CircleDot,
   CheckCircle,
   CircleDashed,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
@@ -126,6 +127,9 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       new Set()
     );
     const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+    const [loadingCheckboxes, setLoadingCheckboxes] = useState<Set<string>>(
+      new Set()
+    );
 
     // Expose the updateFileStatuses method via ref
     useImperativeHandle(ref, () => ({
@@ -143,8 +147,6 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             repoPath: initialPath,
             filePaths: paths,
           });
-
-          console.log("statuses", statuses);
 
           setTree((currentTree) => {
             if (!currentTree) return null;
@@ -224,7 +226,6 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         const result = await invoke<FileEntry[]>("get_file_tree_structure", {
           path: initialPath,
         });
-        console.log("result", result);
         const treeStructure = buildFileTree(result);
         setTree(treeStructure);
       } catch (error) {
@@ -311,6 +312,11 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     };
 
     const toggleSelection = async (path: string) => {
+      setLoadingCheckboxes((prev) => {
+        const next = new Set(prev);
+        next.add(path);
+        return next;
+      });
       const timingId = startTiming(
         EventCategory.ACTION,
         "toggle_file_selection",
@@ -322,17 +328,13 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         if (tree) {
           node = findNodeByPath(tree, path, initialPath);
         }
-        console.log("node", node);
         if (selectedPaths.has(path)) {
           // Unselect this path and all descendants if directory
           if (node && node.is_directory) {
-            console.log("unselecting directory", path);
             const allDescendants = getAllDescendantPaths(
               node,
               path.substring(0, path.lastIndexOf("/"))
             );
-            console.log("allDescendants", allDescendants);
-            // Remove all descendants and the folder itself
             await invoke("remove_selected_file", { path });
             for (const descendant of allDescendants) {
               await invoke("remove_selected_file", { path: descendant });
@@ -358,13 +360,10 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         } else {
           // Select this path and all descendants if directory
           if (node && node.is_directory) {
-            console.log("selecting directory", path);
             const allDescendants = getAllDescendantPaths(
               node,
               path.substring(0, path.lastIndexOf("/"))
             );
-            console.log("allDescendants", allDescendants);
-            // Add all descendants and the folder itself
             await invoke("add_selected_file", { path });
             for (const descendant of allDescendants) {
               await invoke("add_selected_file", { path: descendant });
@@ -379,8 +378,6 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
               return next;
             });
           } else {
-            console.log("selecting file (not directory)", path);
-            console.log("selected node", node);
             await invoke("add_selected_file", { path });
             setSelectedPaths((prev) => {
               const next = new Set(prev);
@@ -393,6 +390,11 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       } catch (error) {
         console.error("Error toggling file selection:", error);
       } finally {
+        setLoadingCheckboxes((prev) => {
+          const next = new Set(prev);
+          next.delete(path);
+          return next;
+        });
         endTiming(timingId);
       }
     };
@@ -532,14 +534,18 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             )}
             style={{ marginLeft: `${level * 16}px` }}
           >
-            <Checkbox
-              checked={isSelected}
-              indeterminate={indeterminate}
-              onCheckedChange={() => {
-                setTimeout(() => toggleSelection(fullPath), 0);
-              }}
-              className="h-4 w-4"
-            />
+            {loadingCheckboxes.has(fullPath) ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <Checkbox
+                checked={isSelected}
+                indeterminate={indeterminate}
+                onCheckedChange={() => {
+                  setTimeout(() => toggleSelection(fullPath), 0);
+                }}
+                className="h-4 w-4"
+              />
+            )}
             {node.is_directory ? (
               <button
                 onClick={(e) => {
