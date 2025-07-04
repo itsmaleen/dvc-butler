@@ -7,11 +7,13 @@ import { Loader2 } from "lucide-react";
 interface CommandCenterProps {
   selectedFiles: string[];
   onAction: (action: string) => Promise<void>;
+  setSelectedFiles: (files: Set<string>) => void;
 }
 
 export const CommandCenter: React.FC<CommandCenterProps> = ({
   selectedFiles,
   onAction,
+  setSelectedFiles,
 }) => {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -30,6 +32,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
     try {
       setLoadingAction(action);
       await onAction(action);
+      setSelectedFiles(new Set());
     } finally {
       setLoadingAction(null);
       endTiming(timingId);
