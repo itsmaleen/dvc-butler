@@ -13,7 +13,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from "@tanstack/react-router";
 import { EventCategory, startTiming, endTiming } from "@/lib/analytics";
 
 interface FileEntry {
@@ -42,6 +41,7 @@ interface FileStatus {
 interface FileTreeProps {
   initialPath: string;
   onSelectionChange?: (selectedPaths: Set<string>) => void;
+  selectedFiles: Set<string>;
 }
 
 export interface FileTreeHandle {
@@ -121,12 +121,11 @@ function buildFileTree(entries: FileEntry[]): FileNode | null {
 }
 
 export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
-  function FileTree({ initialPath, onSelectionChange }, ref) {
+  function FileTree({ initialPath, onSelectionChange, selectedFiles }, ref) {
     const [tree, setTree] = useState<FileNode | null>(null);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
       new Set()
     );
-    const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
     const [loadingCheckboxes, setLoadingCheckboxes] = useState<Set<string>>(
       new Set()
     );
@@ -208,7 +207,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         );
         try {
           const files = await invoke<string[]>("get_selected_files");
-          setSelectedPaths(new Set(files));
+          onSelectionChange?.(new Set(files));
         } catch (error) {
           console.error("Error loading selected files:", error);
         } finally {
@@ -328,7 +327,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         if (tree) {
           node = findNodeByPath(tree, path, initialPath);
         }
-        if (selectedPaths.has(path)) {
+        if (selectedFiles.has(path)) {
           // Unselect this path and all descendants if directory
           if (node && node.is_directory) {
             const allDescendants = getAllDescendantPaths(
@@ -339,23 +338,17 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             for (const descendant of allDescendants) {
               await invoke("remove_selected_file", { path: descendant });
             }
-            setSelectedPaths((prev) => {
-              const next = new Set(prev);
-              next.delete(path);
-              for (const descendant of allDescendants) {
-                next.delete(descendant);
-              }
-              onSelectionChange?.(next);
-              return next;
-            });
+            const newSelectedFiles = new Set(selectedFiles);
+            newSelectedFiles.delete(path);
+            for (const descendant of allDescendants) {
+              newSelectedFiles.delete(descendant);
+            }
+            onSelectionChange?.(newSelectedFiles);
           } else {
             await invoke("remove_selected_file", { path });
-            setSelectedPaths((prev) => {
-              const next = new Set(prev);
-              next.delete(path);
-              onSelectionChange?.(next);
-              return next;
-            });
+            const newSelectedFiles = new Set(selectedFiles);
+            newSelectedFiles.delete(path);
+            onSelectionChange?.(newSelectedFiles);
           }
         } else {
           // Select this path and all descendants if directory
@@ -368,23 +361,17 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             for (const descendant of allDescendants) {
               await invoke("add_selected_file", { path: descendant });
             }
-            setSelectedPaths((prev) => {
-              const next = new Set(prev);
-              next.add(path);
-              for (const descendant of allDescendants) {
-                next.add(descendant);
-              }
-              onSelectionChange?.(next);
-              return next;
-            });
+            const newSelectedFiles = new Set(selectedFiles);
+            newSelectedFiles.add(path);
+            for (const descendant of allDescendants) {
+              newSelectedFiles.add(descendant);
+            }
+            onSelectionChange?.(newSelectedFiles);
           } else {
             await invoke("add_selected_file", { path });
-            setSelectedPaths((prev) => {
-              const next = new Set(prev);
-              next.add(path);
-              onSelectionChange?.(next);
-              return next;
-            });
+            const newSelectedFiles = new Set(selectedFiles);
+            newSelectedFiles.add(path);
+            onSelectionChange?.(newSelectedFiles);
           }
         }
       } catch (error) {
@@ -470,7 +457,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           }
         } else {
           total++;
-          if (selectedPaths.has(fp)) selected++;
+          if (selectedFiles.has(fp)) selected++;
         }
       };
       for (const child of node.children) {
@@ -488,7 +475,7 @@ export const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       const fullPath = path + "/" + node.name;
 
       const isExpanded = expandedFolders.has(fullPath);
-      const isSelected = selectedPaths.has(fullPath);
+      const isSelected = selectedFiles.has(fullPath);
 
       const displayStatus = node.git_status;
 

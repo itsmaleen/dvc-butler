@@ -155,6 +155,7 @@ function Index() {
               ref={fileTreeRef}
               initialPath={localPath}
               onSelectionChange={setSelectedFiles}
+              selectedFiles={selectedFiles}
             />
           )
         )}
@@ -162,6 +163,7 @@ function Index() {
       <CommandCenter
         selectedFiles={Array.from(selectedFiles)}
         onAction={handleCommandAction}
+        setSelectedFiles={setSelectedFiles}
       />
     </>
   );
