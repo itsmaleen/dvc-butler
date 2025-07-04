@@ -1,9 +1,5 @@
-import InitializeDvcStep, { DvcConfig } from "@/components/initialize-dvc-step";
 import LocalDataStep, { LocalDataConfig } from "@/components/local-data-step";
 import ProjectInfoStep, { ProjectInfo } from "@/components/project-info-step";
-import RemoteStorageStep, {
-  RemoteStorageConfig,
-} from "@/components/remote-storage-step";
 import ReviewStep from "@/components/review-step";
 import WizardLayout from "@/components/wizard-layout";
 import { createProject } from "@/lib/db";
@@ -35,32 +31,14 @@ function RouteComponent() {
     description: "",
   });
 
-  const [dvcConfig, setDvcConfig] = useState<DvcConfig>({
-    initialize: true,
-  });
-
   const [localDataConfig, setLocalDataConfig] = useState<LocalDataConfig>({
     folderPath: "",
     folderType: "existing",
   });
 
-  const [remoteStorageConfig, setRemoteStorageConfig] =
-    useState<RemoteStorageConfig>({
-      storageType: "s3",
-      bucketName: "",
-      accessKey: "",
-      secretKey: "",
-    });
-
   const [isCreating, setIsCreating] = useState(false);
 
-  const steps = [
-    "Project Info",
-    "Initialize DVC",
-    "Local Data",
-    "Remote Storage",
-    "Review",
-  ];
+  const steps = ["Project Info", "Local Data", "Review"];
 
   const handleNext = () => {
     // Validate current step before proceeding
@@ -81,53 +59,11 @@ function RouteComponent() {
       }
     }
 
-    if (currentStep === 2 && !localDataConfig.folderPath) {
+    if (currentStep === 1 && !localDataConfig.folderPath) {
       toast("Folder path is required", {
-        description: "Please specify a folder path for your DICOM data",
+        description: "Please specify a folder path for your data files",
       });
       return;
-    }
-
-    if (currentStep === 3) {
-      if (
-        remoteStorageConfig.storageType === "s3" &&
-        !remoteStorageConfig.bucketName
-      ) {
-        toast("Bucket name is required", {
-          description: "Please specify an S3 bucket name",
-        });
-        return;
-      }
-
-      if (
-        remoteStorageConfig.storageType === "gcs" &&
-        !remoteStorageConfig.bucketName
-      ) {
-        toast("Bucket name is required", {
-          description: "Please specify a GCS bucket name",
-        });
-        return;
-      }
-
-      if (
-        remoteStorageConfig.storageType === "azure" &&
-        !remoteStorageConfig.containerName
-      ) {
-        toast("Container name is required", {
-          description: "Please specify an Azure container name",
-        });
-        return;
-      }
-
-      if (
-        remoteStorageConfig.storageType === "local" &&
-        !remoteStorageConfig.localPath
-      ) {
-        toast("Local path is required", {
-          description: "Please specify a local path for remote storage",
-        });
-        return;
-      }
     }
 
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -144,6 +80,12 @@ function RouteComponent() {
     });
 
     try {
+      // Set initialize to true for DVC
+      const dvcConfig = { initialize: true };
+
+      // Default to no remote storage
+      const remoteStorageConfig = { storageType: "none" as const };
+
       await createProject(
         projectInfo,
         dvcConfig,
@@ -187,26 +129,8 @@ function RouteComponent() {
       return !projectInfo.name || !/^[a-zA-Z0-9_-]+$/.test(projectInfo.name);
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 1) {
       return !localDataConfig.folderPath;
-    }
-
-    if (currentStep === 3) {
-      if (remoteStorageConfig.storageType === "s3") {
-        return !remoteStorageConfig.bucketName;
-      }
-
-      if (remoteStorageConfig.storageType === "gcs") {
-        return !remoteStorageConfig.bucketName;
-      }
-
-      if (remoteStorageConfig.storageType === "azure") {
-        return !remoteStorageConfig.containerName;
-      }
-
-      if (remoteStorageConfig.storageType === "local") {
-        return !remoteStorageConfig.localPath;
-      }
     }
 
     return false;
@@ -253,32 +177,18 @@ function RouteComponent() {
         )}
 
         {currentStep === 1 && (
-          <InitializeDvcStep
-            dvcConfig={dvcConfig}
-            onDvcConfigChange={setDvcConfig}
-          />
-        )}
-
-        {currentStep === 2 && (
           <LocalDataStep
             localDataConfig={localDataConfig}
             onLocalDataConfigChange={setLocalDataConfig}
           />
         )}
 
-        {currentStep === 3 && (
-          <RemoteStorageStep
-            remoteStorageConfig={remoteStorageConfig}
-            onRemoteStorageConfigChange={setRemoteStorageConfig}
-          />
-        )}
-
-        {currentStep === 4 && (
+        {currentStep === 2 && (
           <ReviewStep
             projectInfo={projectInfo}
-            dvcConfig={dvcConfig}
+            dvcConfig={{ initialize: true }}
             localDataConfig={localDataConfig}
-            remoteStorageConfig={remoteStorageConfig}
+            remoteStorageConfig={{ storageType: "none" }}
             onEditStep={handleEditStep}
           />
         )}

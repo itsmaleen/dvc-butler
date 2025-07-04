@@ -31,7 +31,7 @@ export default function InitializeDvcStep({
       <div>
         <h2 className="text-2xl font-bold mb-2">Initialize DVC</h2>
         <p className="text-muted-foreground">
-          Data Version Control (DVC) helps you track changes to your DICOM data
+          Data Version Control (DVC) helps you track changes to your data files
           alongside your code.
         </p>
       </div>
@@ -50,15 +50,14 @@ export default function InitializeDvcStep({
                 <TooltipContent>
                   <p className="max-w-xs">
                     DVC (Data Version Control) allows you to track changes to
-                    your DICOM data files, similar to how Git tracks code
-                    changes.
+                    your data files, similar to how Git tracks code changes.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <p className="text-sm text-muted-foreground">
-            Track and version your DICOM data files separately from your code
+            Track and version your data files separately from your code
           </p>
         </div>
         <Switch
@@ -76,7 +75,7 @@ export default function InitializeDvcStep({
               <li>
                 Create a <code>.dvc</code> directory in your project
               </li>
-              <li>Track large DICOM files without storing them in Git</li>
+              <li>Track large data files without storing them in Git</li>
               <li>Enable versioning of your data alongside your code</li>
               <li>Allow you to easily switch between data versions</li>
             </ul>
@@ -89,7 +88,7 @@ export default function InitializeDvcStep({
           <AlertDescription className="text-sm">
             <strong>Without DVC:</strong>
             <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>Large DICOM files will need to be managed manually</li>
+              <li>Large data files will need to be managed manually</li>
               <li>
                 You'll need to implement your own data versioning strategy
               </li>

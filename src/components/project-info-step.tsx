@@ -79,7 +79,7 @@ export default function ProjectInfoStep({
           </div>
           <Input
             id="project-name"
-            placeholder="my-dicom-project"
+            placeholder="my-data-project"
             value={projectInfo.name}
             onChange={handleNameChange}
             className={nameError ? "border-red-500" : ""}
@@ -107,7 +107,7 @@ export default function ProjectInfoStep({
           </div>
           <Textarea
             id="project-description"
-            placeholder="A brief description of your DICOM project..."
+            placeholder="A brief description of your data project..."
             value={projectInfo.description}
             onChange={handleDescriptionChange}
             rows={4}

@@ -64,8 +64,8 @@ export default function LocalDataStep({
         multiple: false,
         title:
           localDataConfig.folderType === "existing"
-            ? "Select Existing DICOM Folder"
-            : "Select Location for New DICOM Folder",
+            ? "Select Existing Data Folder"
+            : "Select Location for New Data Folder",
       });
 
       if (selected) {
@@ -86,7 +86,7 @@ export default function LocalDataStep({
       <div>
         <h2 className="text-2xl font-bold mb-2">Local Data Folder</h2>
         <p className="text-muted-foreground">
-          Select where your DICOM data will be stored locally.
+          Select where your data files will be stored locally.
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export default function LocalDataStep({
                 <TooltipContent>
                   <p className="max-w-xs">
                     Choose whether to use an existing folder or create a new one
-                    for your DICOM data.
+                    for your data files.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -137,8 +137,8 @@ export default function LocalDataStep({
                 <TooltipContent>
                   <p className="max-w-xs">
                     {localDataConfig.folderType === "existing"
-                      ? "Select an existing folder where your DICOM data is stored."
-                      : "Specify a path where a new folder will be created for your DICOM data."}
+                      ? "Select an existing folder where your data files are stored."
+                      : "Specify a path where a new folder will be created for your data files."}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -149,8 +149,8 @@ export default function LocalDataStep({
               id="folder-path"
               placeholder={
                 localDataConfig.folderType === "existing"
-                  ? "/path/to/existing/dicom/folder"
-                  : "/path/to/new/dicom/folder"
+                  ? "/path/to/existing/data/folder"
+                  : "/path/to/new/data/folder"
               }
               value={localDataConfig.folderPath}
               onChange={handleFolderPathChange}
