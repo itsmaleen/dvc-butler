@@ -83,11 +83,10 @@ function Index() {
         break;
       case "add":
         try {
-          for (const file of selectedFiles) {
-            await invoke("add_dvc_file", {
-              path: localPath,
-              file,
-            });
+          const leafFiles = filterLeafPaths(selectedFiles);
+          console.log("leafFiles", leafFiles);
+          for (const file of leafFiles) {
+            await invoke("add_dvc_file", { path: localPath, file });
             toast.success(`Added and staged ${file} (DVC + git add)`);
           }
 
@@ -167,4 +166,18 @@ function Index() {
       />
     </>
   );
+}
+
+function filterLeafPaths(selectedFiles: Set<string>): string[] {
+  const paths = Array.from(selectedFiles).sort();
+  const result: string[] = [];
+  for (let i = 0; i < paths.length; i++) {
+    const isPrefix = paths.some(
+      (other, j) => j !== i && other.startsWith(paths[i] + "/")
+    );
+    if (!isPrefix) {
+      result.push(paths[i]);
+    }
+  }
+  return result;
 }

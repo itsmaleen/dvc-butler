@@ -62,10 +62,17 @@ export function TopBar({
       try {
         const [current, list] = await Promise.all([
           invoke<string>("git_current_branch", { repoPath }),
-          invoke<string[]>("git_list_branches", { repoPath }),
+          invoke<
+            {
+              name: string;
+              is_current: boolean;
+              is_remote: boolean;
+              upstream: string | null;
+            }[]
+          >("git_list_branches", { repoPath }),
         ]);
         setBranch(current);
-        setBranches(list);
+        setBranches(list.map((b) => b.name));
       } catch (err) {
         setBranch("");
         setBranches([]);
@@ -82,10 +89,17 @@ export function TopBar({
         try {
           const [current, list] = await Promise.all([
             invoke<string>("git_current_branch", { repoPath }),
-            invoke<string[]>("git_list_branches", { repoPath }),
+            invoke<
+              {
+                name: string;
+                is_current: boolean;
+                is_remote: boolean;
+                upstream: string | null;
+              }[]
+            >("git_list_branches", { repoPath }),
           ]);
           setBranch(current);
-          setBranches(list);
+          setBranches(list.map((b) => b.name));
         } catch {}
       })();
     }
@@ -152,10 +166,17 @@ export function TopBar({
       // Refresh branch info
       const [current, list] = await Promise.all([
         invoke<string>("git_current_branch", { repoPath }),
-        invoke<string[]>("git_list_branches", { repoPath }),
+        invoke<
+          {
+            name: string;
+            is_current: boolean;
+            is_remote: boolean;
+            upstream: string | null;
+          }[]
+        >("git_list_branches", { repoPath }),
       ]);
       setBranch(current);
-      setBranches(list);
+      setBranches(list.map((b) => b.name));
     } catch (err: any) {
       toast.error(err?.toString() || "Switch branch failed");
     } finally {
